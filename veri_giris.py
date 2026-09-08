@@ -124,14 +124,12 @@ elif not arastirmaci or not ogrenci_kod:
 elif kota_durumu in ["uygun", "uyari"]:
     
     c1, c2, c3, c4 = st.columns(4)
-    # Biyolojik olarak mantıksız süre girişlerini engelleyen sınırlar (Min 10 sn)
-    sure_sekil = c1.number_input("Şekil Testi (sn)", min_value=10.0, max_value=200.0, step=0.5, value=0.0)
-    sure_renk  = c2.number_input("Renk Testi (sn)",  min_value=10.0, max_value=200.0, step=0.5, value=0.0)
-    sure_sayi  = c3.number_input("Sayı Testi (sn)",  min_value=10.0, max_value=200.0, step=0.5, value=0.0)
+    sure_sekil = c1.number_input("Şekil Testi (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+    sure_renk  = c2.number_input("Renk Testi (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+    sure_sayi  = c3.number_input("Sayı Testi (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
     
-    # Harf Testi Gelişimsel Kuralı (Sadece 83. aydan itibaren aktif olur)
     if yas_ay >= 83:
-        sure_harf = c4.number_input("Harf Testi (sn)", min_value=10.0, max_value=200.0, step=0.5, value=0.0)
+        sure_harf = c4.number_input("Harf Testi (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
     else:
         sure_harf = 0.0
         c4.info("ℹ️ Harf testi sadece 83. ay ve üzeri için uygulanır.")
