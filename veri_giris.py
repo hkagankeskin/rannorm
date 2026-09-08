@@ -6,6 +6,14 @@ from google.oauth2.service_account import Credentials
 
 st.set_page_config(page_title="RAN Ulusal Norm - Veri Girişi", layout="wide", initial_sidebar_state="collapsed")
 
+# --- OKUL LİSTESİ (SED GRUPLARINA GÖRE) ---
+# İleride kendi okul isimlerinizi buradaki tırnak aralarına ekleyebilirsiniz.
+OKUL_LISTESI = {
+    "Alt": ["Örnek Alt SED İlkokulu A", "Örnek Alt SED İlkokulu B"],
+    "Orta": ["Örnek Orta SED İlkokulu A", "Örnek Orta SED İlkokulu B"],
+    "Üst": ["Örnek Üst SED İlkokulu A", "Örnek Üst SED İlkokulu B"]
+}
+
 # --- GOOGLE SHEETS BAĞLANTI FONKSİYONU ---
 def get_gspread_client():
     scope = [
@@ -58,7 +66,7 @@ st.divider()
 col_sol, col_sag = st.columns([1, 1], gap="large")
 
 # -----------------------------------------
-# SOL PANEL: ÖĞRENCİ BİLGİLERİ VE DIŞLAMA
+# SOL PANEL: ÖĞRENCİ BİLGİLERİ VE OKUL SEÇİMİ
 # -----------------------------------------
 with col_sol:
     st.subheader("1. Öğrenci Bilgileri")
@@ -70,17 +78,12 @@ with col_sol:
     cinsiyet = col_c.selectbox("Cinsiyet", ["Kız", "Erkek"])
     sed = col_s.selectbox("Okul SED Türü", ["Alt", "Orta", "Üst"])
     
+    # SED seçimine göre dinamik okul listesi
+    secilen_okul = st.selectbox("Okul Adı", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
+    
     col_d, col_t = st.columns(2)
-    # Gün-Ay-Yıl formatı (DD.MM.YYYY)
     dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2010, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
     test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
-
-    st.markdown("---")
-    st.markdown("**(Zorunlu) Norm Dışlama Kriterleri:**")
-    kriter_1 = st.checkbox("Öğrencinin anadili Türkçedir.")
-    kriter_2 = st.checkbox("Bilinen bir nörogelişimsel (örn: DEHB, Disleksi) veya görme/işitme engeli yoktur.")
-    
-    kriterler_uygun = kriter_1 and kriter_2
 
 # -----------------------------------------
 # SAĞ PANEL: YAŞ HESABI VE KOTA DURUMU
@@ -127,8 +130,6 @@ st.subheader("3. Kronometre Süreleri (Saniye)")
 
 if kota_durumu == "dolu":
     st.error("🔒 Bu alt grup için veri girişi sistem tarafından kapatılmıştır.")
-elif not kriterler_uygun:
-    st.warning("🔒 Devam etmek için yukarıdaki iki norm dışlama kriterini onaylamalısınız.")
 elif not arastirmaci or not ogrenci_kod:
     st.info("ℹ️ Lütfen öğrenci kodunu ve araştırmacı kodunu eksiksiz doldurunuz.")
 elif kota_durumu in ["uygun", "uyari"]:
@@ -162,6 +163,7 @@ elif kota_durumu in ["uygun", "uyari"]:
                         ogrenci_kod,
                         cinsiyet,
                         sed,
+                        secilen_okul, # Okul adı da kayda eklendi
                         dogum_tarihi.strftime("%Y-%m-%d"),
                         test_tarihi.strftime("%Y-%m-%d"),
                         yas_ay,
