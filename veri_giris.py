@@ -1,32 +1,56 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-from streamlit_gsheets import GSheetsConnection
+import gspread
+from google.oauth2.service_account import Credentials
 
 st.set_page_config(page_title="RAN Ulusal Norm - Veri Girişi", layout="wide", initial_sidebar_state="collapsed")
 
+# --- GOOGLE SHEETS BAĞLANTI FONKSİYONU (Doğrudan Gspread) ---
+def get_gspread_client():
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    creds_dict = {
+        "type": st.secrets["connections"]["gsheets"]["type"],
+        "project_id": st.secrets["connections"]["gsheets"]["project_id"],
+        "private_key_id": st.secrets["connections"]["gsheets"]["private_key_id"],
+        "private_key": st.secrets["connections"]["gsheets"]["private_key"],
+        "client_email": st.secrets["connections"]["gsheets"]["client_email"],
+        "client_id": st.secrets["connections"]["gsheets"]["client_id"],
+        "auth_uri": st.secrets["connections"]["gsheets"]["auth_uri"],
+        "token_uri": st.secrets["connections"]["gsheets"]["token_uri"],
+        "auth_provider_x509_cert_url": st.secrets["connections"]["gsheets"]["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": st.secrets["connections"]["gsheets"]["client_x509_cert_url"],
+    }
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    client = gspread.authorize(creds)
+    return client
+
 # --- KOTA KONTROL ALGORİTMASI (Canlı Okuma) ---
-def check_quota(yas_ay, sed, conn):
+def check_quota(yas_ay, sed):
     try:
-        # ttl=0 parametresi cache'i devre dışı bırakır, her defasında canlı veriyi çeker
-        df = conn.read(worksheet="Sheet1", ttl=0)
+        client = get_gspread_client()
+        sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+        sheet = client.open_by_url(sheet_url)
+        worksheet = sheet.worksheet("Sheet1")
         
-        # Eğer tablo henüz boşsa veya ilgili sütunlar yoksa hatayı önlemek için
-        if "Yas_Ayi" in df.columns and "SED" in df.columns:
+        # Tüm verileri DataFrame'e çekiyoruz
+        data = worksheet.get_all_records()
+        df = pd.DataFrame(data)
+        
+        if not df.empty and "Yas_Ayi" in df.columns and "SED" in df.columns:
             mevcut_sayi = len(df[(df["Yas_Ayi"] == yas_ay) & (df["SED"] == sed)])
         else:
             mevcut_sayi = 0
     except Exception:
         mevcut_sayi = 0
         
-    # Her yaş ayı ve SED grubu için hedefler
     HEDEF_KOTA = 8
     MAKS_KOTA = 10
     
     return mevcut_sayi, HEDEF_KOTA, MAKS_KOTA
-
-# --- GOOGLE SHEETS BAĞLANTISI ---
-conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- ANA ARAYÜZ ---
 st.markdown("<h2 style='text-align: center; color: #1e3a8a;'>📋 RAN Ulusal Norm - Saha Veri Toplama Paneli</h2>", unsafe_allow_html=True)
@@ -65,7 +89,6 @@ with col_sag:
     st.subheader("2. Yaş Ayı ve Kota Kontrolü")
     
     if dogum_tarihi and test_tarihi:
-        # Yaş Ayı Hesaplama Formülü
         yil_farki = test_tarihi.year - dogum_tarihi.year
         ay_farki = test_tarihi.month - dogum_tarihi.month
         
@@ -76,24 +99,22 @@ with col_sag:
         
         st.markdown(f"<h3 style='color: #2563eb;'>Hesaplanan Net Yaş: {yas_ay} Ay</h3>", unsafe_allow_html=True)
         
-        # Yaş Sınırı Kontrolü
         if yas_ay < 60 or yas_ay > 167:
             st.error("❌ DİKKAT: Bu öğrencinin yaşı (60-167 ay) örneklem kapsamı dışındadır. Teste alınamaz.")
             kota_durumu = "gecersiz"
         else:
-            # Canlı kotayı Google Sheets üzerinden çekiyoruz
-            mevcut, hedef, maks = check_quota(yas_ay, sed, conn)
+            mevcut, hedef, maks = check_quota(yas_ay, sed)
             
             st.markdown(f"**{yas_ay}. Ay — {sed} SED Kotası Durumu:**")
             
             if mevcut >= maks:
-                st.error(f"🚨 KOTA DOLDU! (Mevcut: {mevcut} / Maks: {maks}) \n\nİstatistiksel tolerans aşıldığı için veri girişi kilitlendi. Lütfen listelerden başka yaş aylarına yöneliniz.")
+                st.error(f"🚨 KOTA DOLDU! (Mevcut: {mevcut} / Maks: {maks}) \n\nİstatistiksel tolerans aşıldığı için veri girişi kilitlendi.")
                 kota_durumu = "dolu"
             elif mevcut >= hedef:
-                st.warning(f"⚠️ KOTA HEDEFİNE ULAŞILDI. (Mevcut: {mevcut} / Hedef: {hedef}) \n\nMecburi kalmadıkça başka öğrencileri teste almayınız.")
+                st.warning(f"⚠️ KOTA HEDEFİNE ULAŞILDI. (Mevcut: {mevcut} / Hedef: {hedef})")
                 kota_durumu = "uyari"
             else:
-                st.success(f"✅ KOTA AÇIK (Mevcut: {mevcut} / Hedef: {hedef}) \n\nÖğrenci teste alınabilir.")
+                st.success(f"✅ KOTA AÇIK (Mevcut: {mevcut} / Hedef: {hedef})")
                 kota_durumu = "uygun"
     else:
         kota_durumu = "bekliyor"
@@ -128,10 +149,11 @@ elif kota_durumu in ["uygun", "uyari"]:
         if sure_sekil < 10.0 or sure_renk < 10.0 or sure_sayi < 10.0 or (yas_ay >= 83 and sure_harf < 10.0):
             st.error("Lütfen uygulanan tüm testlerin sürelerini 10 saniyeden büyük, geçerli bir değer olarak giriniz.")
         else:
-            with st.spinner("Veri Google Sheets sunucularına güvenle kaydediliyor, lütfen bekleyiniz..."):
+            with st.spinner("Veri Google Sheets sunucularına güvenle kaydediliyor..."):
                 try:
-                    client = conn._instance._client
-                    sheet = client.open_by_url(st.secrets["connections"]["gsheets"]["spreadsheet"])
+                    client = get_gspread_client()
+                    sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+                    sheet = client.open_by_url(sheet_url)
                     worksheet = sheet.worksheet("Sheet1")
                     
                     yeni_satir = [
