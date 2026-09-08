@@ -6,7 +6,7 @@ from google.oauth2.service_account import Credentials
 
 st.set_page_config(page_title="RAN Ulusal Norm - Veri Girişi", layout="wide", initial_sidebar_state="collapsed")
 
-# --- GOOGLE SHEETS BAĞLANTI FONKSİYONU (Doğrudan Gspread) ---
+# --- GOOGLE SHEETS BAĞLANTI FONKSİYONU ---
 def get_gspread_client():
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -28,7 +28,7 @@ def get_gspread_client():
     client = gspread.authorize(creds)
     return client
 
-# --- KOTA KONTROL ALGORİTMASI (Canlı Okuma) ---
+# --- KOTA KONTROL ALGORİTMASI ---
 def check_quota(yas_ay, sed):
     try:
         client = get_gspread_client()
@@ -36,7 +36,6 @@ def check_quota(yas_ay, sed):
         sheet = client.open_by_url(sheet_url)
         worksheet = sheet.worksheet("Sheet1")
         
-        # Tüm verileri DataFrame'e çekiyoruz
         data = worksheet.get_all_records()
         df = pd.DataFrame(data)
         
@@ -72,8 +71,9 @@ with col_sol:
     sed = col_s.selectbox("Okul SED Türü", ["Alt", "Orta", "Üst"])
     
     col_d, col_t = st.columns(2)
-    dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2010, 1, 1), max_value=date(2022, 12, 31))
-    test_tarihi = col_t.date_input("Test Tarihi", value=date.today())
+    # Gün-Ay-Yıl formatı (DD.MM.YYYY)
+    dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2010, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
+    test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
 
     st.markdown("---")
     st.markdown("**(Zorunlu) Norm Dışlama Kriterleri:**")
@@ -173,7 +173,6 @@ elif kota_durumu in ["uygun", "uyari"]:
                     
                     worksheet.append_row(yeni_satir)
                     st.success(f"🎉 Başarılı! {ogrenci_kod} kodlu öğrencinin verileri sisteme işlendi.")
-                    st.balloons()
                     
                 except Exception as e:
                     st.error(f"KAYIT HATASI OLUŞTU: {str(e)}")
