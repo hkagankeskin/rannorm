@@ -85,28 +85,21 @@ def get_gspread_client():
     client = gspread.authorize(creds)
     return client
 
-# --- KOTA KONTROL ALGORİTMASI ---
-def check_quota(yas_ay, sed):
+# --- CANLI VERİ ÇEKME FONKSİYONU ---
+def get_data():
     try:
         client = get_gspread_client()
         sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
         sheet = client.open_by_url(sheet_url)
         worksheet = sheet.worksheet("Sheet1")
-        
         data = worksheet.get_all_records()
         df = pd.DataFrame(data)
-        
-        if not df.empty and "Yas_Ayi" in df.columns and "SED" in df.columns:
-            mevcut_sayi = len(df[(df["Yas_Ayi"] == yas_ay) & (df["SED"] == sed)])
-        else:
-            mevcut_sayi = 0
+        return df
     except Exception:
-        mevcut_sayi = 0
-        
-    HEDEF_KOTA = 8
-    MAKS_KOTA = 10
-    
-    return mevcut_sayi, HEDEF_KOTA, MAKS_KOTA
+        return pd.DataFrame()
+
+# Tablodan canlı verileri al
+df_mevcut = get_data()
 
 # --- ANA ARAYÜZ ---
 st.markdown("<h2 style='text-align: center; color: #1e3a8a;'>📋 RAN Ulusal Norm - Saha Veri Toplama Paneli</h2>", unsafe_allow_html=True)
@@ -115,7 +108,7 @@ st.divider()
 col_sol, col_sag = st.columns([1, 1], gap="large")
 
 # -----------------------------------------
-# SOL PANEL: ÖĞRENCİ BİLGİLERİ VE OKUL SEÇİMİ
+# SOL PANEL: ÖĞRENCİ BİLGİLERİ VE VERİ GİRİŞİ
 # -----------------------------------------
 with col_sol:
     st.subheader("1. Öğrenci Bilgileri")
@@ -127,103 +120,158 @@ with col_sol:
     cinsiyet = col_c.selectbox("Cinsiyet", ["Kız", "Erkek"])
     sed = col_s.selectbox("Okul SED Türü", ["Alt", "Orta", "Üst"])
     
-    # SED seçimine göre dinamik okul listesi
     secilen_okul = st.selectbox("Uygulama Yapılacak Okul", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
     
     col_d, col_t = st.columns(2)
     dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2010, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
     test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
 
-# -----------------------------------------
-# SAĞ PANEL: YAŞ HESABI VE KOTA DURUMU
-# -----------------------------------------
-with col_sag:
-    st.subheader("2. Yaş Ayı ve Kota Kontrolü")
+    # Öğrencinin anlık kota durumu hesabı
+    yas_ay = None
+    kota_durumu = "bekliyor"
     
     if dogum_tarihi and test_tarihi:
         yil_farki = test_tarihi.year - dogum_tarihi.year
         ay_farki = test_tarihi.month - dogum_tarihi.month
-        
         if test_tarihi.day < dogum_tarihi.day:
             ay_farki -= 1
-            
         yas_ay = (yil_farki * 12) + ay_farki
         
-        st.markdown(f"<h3 style='color: #2563eb;'>Hesaplanan Net Yaş: {yas_ay} Ay</h3>", unsafe_allow_html=True)
+        st.markdown(f"**Hesaplanan Yaş:** `{yas_ay} Ay`")
         
         if yas_ay < 60 or yas_ay > 167:
-            st.error("❌ DİKKAT: Bu öğrencinin yaşı (60-167 ay) örneklem kapsamı dışındadır. Teste alınamaz.")
+            st.error("❌ Bu öğrencinin yaşı (60-167 ay) örneklem kapsamı dışındadır.")
             kota_durumu = "gecersiz"
         else:
-            mevcut, hedef, maks = check_quota(yas_ay, sed)
-            
-            st.markdown(f"**{yas_ay}. Ay — {sed} SED Kotası Durumu:**")
-            
-            if mevcut >= maks:
-                st.error(f"🚨 KOTA DOLDU! (Mevcut: {mevcut} / Maks: {maks}) \n\nİstatistiksel tolerans aşıldığı için veri girişi kilitlendi.")
+            if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns and "SED" in df_mevcut.columns:
+                mevcut_ogrenci = len(df_mevcut[(df_mevcut["Yas_Ayi"] == yas_ay) & (df_mevcut["SED"] == sed)])
+            else:
+                mevcut_ogrenci = 0
+                
+            if mevcut_ogrenci >= 10:
+                st.error(f"🚨 Bu grupta kota tamamen doldu! ({mevcut_ogrenci}/10). Veri girişi kilitlendi.")
                 kota_durumu = "dolu"
-            elif mevcut >= hedef:
-                st.warning(f"⚠️ KOTA HEDEFİNE ULAŞILDI. (Mevcut: {mevcut} / Hedef: {hedef})")
+            elif mevcut_ogrenci >= 8:
+                st.warning(f"⚠️ Kota hedefine ulaşıldı ({mevcut_ogrenci}/8). Mecbur kalmadıkça eklemeyiniz.")
                 kota_durumu = "uyari"
             else:
-                st.success(f"✅ KOTA AÇIK (Mevcut: {mevcut} / Hedef: {hedef})")
+                st.success(f"✅ Kota Açık ({mevcut_ogrenci}/8). Kalan İhtiyaç: {8 - mevcut_ogrenci}")
                 kota_durumu = "uygun"
-    else:
-        kota_durumu = "bekliyor"
 
-# -----------------------------------------
-# ALT PANEL: SÜRE GİRİŞİ VE ATOMİK KAYIT
-# -----------------------------------------
-st.divider()
-st.subheader("3. Kronometre Süreleri (Saniye)")
+    st.markdown("---")
+    st.subheader("2. Kronometre Süreleri (Saniye)")
 
-if kota_durumu == "dolu":
-    st.error("🔒 Bu alt grup için veri girişi sistem tarafından kapatılmıştır.")
-elif not arastirmaci or not ogrenci_kod:
-    st.info("ℹ️ Lütfen öğrenci kodunu ve araştırmacı kodunu eksiksiz doldurunuz.")
-elif kota_durumu in ["uygun", "uyari"]:
-    
-    c1, c2, c3, c4 = st.columns(4)
-    sure_sekil = c1.number_input("Şekil Testi (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-    sure_renk  = c2.number_input("Renk Testi (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-    sure_sayi  = c3.number_input("Sayı Testi (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-    
-    if yas_ay >= 83:
-        sure_harf = c4.number_input("Harf Testi (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-    else:
-        sure_harf = 0.0
-        c4.info("ℹ️ Harf testi sadece 83. ay ve üzeri için uygulanır.")
-
-    st.write("")
-    if st.button("💾 VERİYİ ANA HAVUZA KAYDET", use_container_width=True, type="primary"):
-        if sure_sekil < 10.0 or sure_renk < 10.0 or sure_sayi < 10.0 or (yas_ay >= 83 and sure_harf < 10.0):
-            st.error("Lütfen uygulanan tüm testlerin sürelerini 10 saniyeden büyük, geçerli bir değer olarak giriniz.")
+    if kota_durumu == "dolu":
+        st.error("🔒 Bu alt grup için veri girişi kapalıdır.")
+    elif not arastirmaci or not ogrenci_kod:
+        st.info("ℹ️ Lütfen araştırmacı ve öğrenci kodunu giriniz.")
+    elif kota_durumu in ["uygun", "uyari"]:
+        c1, c2, c3, c4 = st.columns(4)
+        sure_sekil = c1.number_input("Şekil (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        sure_renk  = c2.number_input("Renk (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        sure_sayi  = c3.number_input("Sayı (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        
+        if yas_ay and yas_ay >= 83:
+            sure_harf = c4.number_input("Harf (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
         else:
-            with st.spinner("Veri Google Sheets sunucularına güvenle kaydediliyor..."):
-                try:
-                    client = get_gspread_client()
-                    sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
-                    sheet = client.open_by_url(sheet_url)
-                    worksheet = sheet.worksheet("Sheet1")
-                    
-                    yeni_satir = [
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        arastirmaci,
-                        ogrenci_kod,
-                        cinsiyet,
-                        sed,
-                        secilen_okul,
-                        dogum_tarihi.strftime("%Y-%m-%d"),
-                        test_tarihi.strftime("%Y-%m-%d"),
-                        yas_ay,
-                        sure_sekil,
-                        sure_renk,
-                        sure_sayi,
-                        sure_harf
-                    ]
-                    
-                    worksheet.append_row(yeni_satir)
-                    st.success(f"🎉 Başarılı! {ogrenci_kod} kodlu öğrencinin verileri sisteme işlendi.")
-                    
-                except Exception as e:
-                    st.error(f"KAYIT HATASI OLUŞTU: {str(e)}")
+            sure_harf = 0.0
+            c4.info("Harf: 83+ ay")
+
+        st.write("")
+        if st.button("💾 VERİYİ HAVUZA KAYDET", use_container_width=True, type="primary"):
+            if sure_sekil < 10.0 or sure_renk < 10.0 or sure_sayi < 10.0 or (yas_ay and yas_ay >= 83 and sure_harf < 10.0):
+                st.error("Lütfen geçerli test süreleri (en az 10 sn) giriniz.")
+            else:
+                with st.spinner("Kaydediliyor..."):
+                    try:
+                        client = get_gspread_client()
+                        sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+                        sheet = client.open_by_url(sheet_url)
+                        worksheet = sheet.worksheet("Sheet1")
+                        
+                        yeni_satir = [
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            arastirmaci,
+                            ogrenci_kod,
+                            cinsiyet,
+                            sed,
+                            secilen_okul,
+                            dogum_tarihi.strftime("%Y-%m-%d"),
+                            test_tarihi.strftime("%Y-%m-%d"),
+                            yas_ay,
+                            sure_sekil,
+                            sure_renk,
+                            sure_sayi,
+                            sure_harf
+                        ]
+                        
+                        worksheet.append_row(yeni_satir)
+                        st.success(f"🎉 {ogrenci_kod} başarıyla kaydedildi!")
+                        st.rerun()  # Tabloyu anında güncellemek için sayfayı yeniler
+                    except Exception as e:
+                        st.error(f"Kayıt Hatası: {str(e)}")
+
+# -----------------------------------------
+# SAĞ PANEL: CANLI KOTA VE İHTİYAÇ TABLOSU
+# -----------------------------------------
+with col_sag:
+    st.subheader("📊 Canlı Kota ve İhtiyaç Durumu")
+    
+    if st.button("🔄 Tabloyu Yenile", help="En son kayıtları çekmek için tıklayın"):
+        st.rerun()
+
+    # Filtreleme Seçenekleri
+    f_col1, f_col2 = st.columns(2)
+    filtre_sed = f_col1.selectbox("Filtrelenecek SED Türü", ["Tümü", "Alt", "Orta", "Üst"])
+    filtre_durum = f_col2.selectbox("Kota Filtresi", ["Tümü", "Sadece İhtiyaç Olanlar (Açık)", "Dolanlar"])
+
+    # Bütün 60-167 ay ve SED kombinasyonları için kota matrisi oluşturma
+    tum_satirlar = []
+    sed_listesi = ["Alt", "Orta", "Üst"] if filtre_sed == "Tümü" else [filtre_sed]
+    
+    for ay in range(60, 168):
+        for s in sed_listesi:
+            if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns and "SED" in df_mevcut.columns:
+                mevcut = len(df_mevcut[(df_mevcut["Yas_Ayi"] == ay) & (df_mevcut["SED"] == s)])
+            else:
+                mevcut = 0
+            
+            kalan_ihtiyac = max(0, 8 - mevcut)
+            
+            if mevcut >= 10:
+                durum = "🔴 Doldu"
+            elif mevcut >= 8:
+                durum = "🟡 Hedef Tamam"
+            else:
+                durum = "🟢 Açık"
+                
+            tum_satirlar.append({
+                "Yaş Ayı": f"{ay} Ay",
+                "SED": s,
+                "Mevcut Kayıt": mevcut,
+                "Hedef": 8,
+                "Kalan İhtiyaç": kalan_ihtiyac,
+                "Durum": durum
+            })
+            
+    df_kota = pd.DataFrame(tum_satirlar)
+    
+    # Durum filtresi uygulama
+    if filtre_durum == "Sadece İhtiyaç Olanlar (Açık)":
+        df_kota = df_kota[df_kota["Kalan İhtiyaç"] > 0]
+    elif filtre_durum == "Dolanlar":
+        df_kota = df_kota[df_kota["Kalan İhtiyaç"] == 0]
+
+    # Özet Sayılar
+    toplam_kayit = len(df_mevcut) if not df_mevcut.empty else 0
+    toplam_hedef = 108 * 8 * (3 if filtre_sed == "Tümü" else 1)
+    
+    st.markdown(f"**Toplam Girilen Kayıt:** `{toplam_kayit}` | **Hedeflenen Veri Sayısı:** `{toplam_hedef}`")
+    
+    # İnteraktif Tablo Gösterimi
+    st.dataframe(
+        df_kota,
+        use_container_width=True,
+        hide_index=True,
+        height=540
+    )
