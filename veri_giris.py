@@ -7,11 +7,60 @@ from google.oauth2.service_account import Credentials
 st.set_page_config(page_title="RAN Ulusal Norm - Veri Girişi", layout="wide", initial_sidebar_state="collapsed")
 
 # --- OKUL LİSTESİ (SED GRUPLARINA GÖRE) ---
-# İleride kendi okul isimlerinizi buradaki tırnak aralarına ekleyebilirsiniz.
 OKUL_LISTESI = {
-    "Alt": ["Örnek Alt SED İlkokulu A", "Örnek Alt SED İlkokulu B"],
-    "Orta": ["Örnek Orta SED İlkokulu A", "Örnek Orta SED İlkokulu B"],
-    "Üst": ["Örnek Üst SED İlkokulu A", "Örnek Üst SED İlkokulu B"]
+    "Alt": [
+        "Karapürçek Abdülhamit Han Anaokulu (ALTINDAĞ)",
+        "Altındağ Belediyesi Nenehatun Anaokulu (ALTINDAĞ)",
+        "Piri Reis Anaokulu (ALTINDAĞ)",
+        "Karapürçek Şehit Ferhat Muratoğlu İlkokulu (ALTINDAĞ)",
+        "Hayme Hatun İlkokulu (ALTINDAĞ)",
+        "Şehit Harun Aydın İlkokulu (ALTINDAĞ)",
+        "Karapürçek Şehit Osman Kablan Ortaokulu (ALTINDAĞ)",
+        "Ertuğrul Gazi Ortaokulu (ALTINDAĞ)",
+        "Yusuf Has Hacip Ortaokulu (ALTINDAĞ)",
+        "Neşeli Çocuklar Anaokulu (MAMAK)",
+        "Habibe-Mehmet Kaya Anaokulu (MAMAK)",
+        "İmirzalıoğlu Ganime Hanım Anaokulu (MAMAK)",
+        "Mehmetçik İlkokulu (MAMAK)",
+        "Gülveren Şehit Umut Coşkun İlkokulu (MAMAK)",
+        "Mehmet Rıfat Börekçi İlkokulu (MAMAK)",
+        "Mamak Ortaokulu (MAMAK)",
+        "Mehmet Çekiç Ortaokulu (MAMAK)",
+        "Yavuz Sultan Selim Ortaokulu (MAMAK)"
+    ],
+    "Orta": [
+        "Mehmetçik Anaokulu (ETİMESGUT)",
+        "Şehit Mehmet Çetin İlkokulu (ETİMESGUT)",
+        "Bağlıca Ortaokulu (ETİMESGUT)",
+        "Çiğdem Çiçeği Anaokulu (SİNCAN)",
+        "Adalet Anaokulu (SİNCAN)",
+        "Hayriye Andiçen Anaokulu (SİNCAN)",
+        "Cemal Yüksel İlkokulu (SİNCAN)",
+        "Dr. Nurettin - Beyhan Elbir İlkokulu (SİNCAN)",
+        "Şehit Emre Karagöz İlkokulu (SİNCAN)",
+        "Dr. Nurettin - Beyhan Elbir Ortaokulu (SİNCAN)",
+        "Özkent Akbilek Ortaokulu (SİNCAN)",
+        "Semiha İsen Ortaokulu (SİNCAN)"
+    ],
+    "Üst": [
+        "Eryaman Başak Anaokulu (ETİMESGUT)",
+        "Şehit Eyyüp Oğuz Anaokulu (ETİMESGUT)",
+        "Eryaman Türkkent İlkokulu (ETİMESGUT)",
+        "Cahit Zarifoğlu İlkokulu (ETİMESGUT)",
+        "Cenk Yakın Ortaokulu (ETİMESGUT)",
+        "Eryaman Kooperatifler Birliği Ortaokulu (ETİMESGUT)",
+        "Şaziye Tekışık Anaokulu (ÇANKAYA)",
+        "Beytepe Jandarma Lojmanları Anaokulu (ÇANKAYA)",
+        "Zübeyde Hanım Anaokulu (ÇANKAYA)",
+        "Beytepe İlkokulu (ÇANKAYA)",
+        "Türk-İş Blokları İlkokulu (ÇANKAYA)",
+        "Ulubatlı Hasan İlkokulu (ÇANKAYA)",
+        "Şehit Battal İlgün İlkokulu (ÇANKAYA)",
+        "Beytepe Ortaokulu (ÇANKAYA)",
+        "T Emlak Bankası Ortaokulu (ÇANKAYA)",
+        "Fevzi Özbey Ortaokulu (ÇANKAYA)",
+        "Necdet Seçkinöz Ortaokulu (ÇANKAYA)"
+    ]
 }
 
 # --- GOOGLE SHEETS BAĞLANTI FONKSİYONU ---
@@ -79,7 +128,7 @@ with col_sol:
     sed = col_s.selectbox("Okul SED Türü", ["Alt", "Orta", "Üst"])
     
     # SED seçimine göre dinamik okul listesi
-    secilen_okul = st.selectbox("Okul Adı", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
+    secilen_okul = st.selectbox("Uygulama Yapılacak Okul", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
     
     col_d, col_t = st.columns(2)
     dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2010, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
@@ -163,7 +212,7 @@ elif kota_durumu in ["uygun", "uyari"]:
                         ogrenci_kod,
                         cinsiyet,
                         sed,
-                        secilen_okul, # Okul adı da kayda eklendi
+                        secilen_okul,
                         dogum_tarihi.strftime("%Y-%m-%d"),
                         test_tarihi.strftime("%Y-%m-%d"),
                         yas_ay,
