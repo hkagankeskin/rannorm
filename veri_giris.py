@@ -4,7 +4,122 @@ from datetime import datetime, date
 import gspread
 from google.oauth2.service_account import Credentials
 
-st.set_page_config(page_title="RAN Ulusal Norm - Veri Girişi", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="RAN Ulusal Norm - Saha Telemetri Paneli",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# --- BİLİŞSEL LABORATUVAR & TELEMETRİ HUD ÖZEL TEMASI (CSS) ---
+st.markdown("""
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+  
+  /* Ana Zemin ve Fontlar */
+  .stApp {
+      background-color: #0a0f1d !important;
+      color: #f8fafc !important;
+      font-family: 'Inter', sans-serif !important;
+  }
+  
+  /* Giriş Elemanları ve Kart Çerçeveleri */
+  div[data-baseweb="input"], div[data-baseweb="select"] {
+      background-color: rgba(15, 23, 42, 0.85) !important;
+      border: 1px solid rgba(56, 189, 248, 0.2) !important;
+      border-radius: 8px !important;
+      color: #f8fafc !important;
+  }
+  
+  input {
+      color: #f8fafc !important;
+      font-family: 'Inter', sans-serif !important;
+  }
+  
+  /* Sayı Kutuları (Monospace / Sayaç Tipi) */
+  input[type="number"] {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-weight: 700 !important;
+      color: #38bdf8 !important;
+      text-align: center !important;
+  }
+
+  /* Etiketler (Labels) */
+  label p {
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      color: #94a3b8 !important;
+  }
+
+  /* Buton Stili (Neon Pulse & Gradient) */
+  div.stButton > button[kind="primary"] {
+      background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+      border: 1px solid rgba(56, 189, 248, 0.4) !important;
+      color: #ffffff !important;
+      border-radius: 10px !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      letter-spacing: 0.5px !important;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4) !important;
+      transition: all 0.2s ease !important;
+  }
+  div.stButton > button[kind="primary"]:hover {
+      box-shadow: 0 6px 25px rgba(56, 189, 248, 0.6) !important;
+      transform: translateY(-1px) !important;
+  }
+
+  /* Telemetri Kartları */
+  .hud-card {
+      background: rgba(17, 24, 39, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+  }
+
+  .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+      padding-bottom: 6px;
+  }
+
+  .telemetry-age-box {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.6));
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 12px 0;
+  }
+
+  .stat-badge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+  }
+
+  .stat-box {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.12);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+  }
+</style>
+""", unsafe_allow_html=True)
 
 # --- OKUL LİSTESİ (SED GRUPLARINA GÖRE) ---
 OKUL_LISTESI = {
@@ -82,8 +197,7 @@ def get_gspread_client():
         "client_x509_cert_url": st.secrets["connections"]["gsheets"]["client_x509_cert_url"],
     }
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-    client = gspread.authorize(creds)
-    return client
+    return gspread.authorize(creds)
 
 # --- CANLI VERİ ÇEKME FONKSİYONU ---
 def get_data():
@@ -93,45 +207,55 @@ def get_data():
         sheet = client.open_by_url(sheet_url)
         worksheet = sheet.worksheet("Sheet1")
         data = worksheet.get_all_records()
-        df = pd.DataFrame(data)
-        return df
+        return pd.DataFrame(data)
     except Exception:
         return pd.DataFrame()
 
-# Tablodan canlı verileri al
 df_mevcut = get_data()
 
-# --- ÇİFT TIKLAMA ÖNLEYİCİ DURUM YÖNETİMİ ---
+# Çift tıklama oturum yönetimi
 if "kaydediliyor" not in st.session_state:
     st.session_state.kaydediliyor = False
 
-# --- ANA ARAYÜZ ---
-st.markdown("<h2 style='text-align: center; color: #1e3a8a;'>📋 RAN Ulusal Norm - Saha Veri Toplama Paneli</h2>", unsafe_allow_html=True)
-st.divider()
+# --- ÜST TELEMETRİ BAŞLIĞI ---
+st.markdown("""
+<div style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #f8fafc; letter-spacing: 0.5px;">
+            ⚡ RAN ULUSAL NORM ÇALIŞMASI <span style="font-size: 11px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">TELEMETRİ HUD</span>
+        </h3>
+        <p style="margin: 2px 0 0 0; font-size: 12px; color: #94a3b8;">Bilişsel İsimlendirme Hızı ve Örneklem Veri Toplama İstasyonu</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono'; font-size: 11px; padding: 4px 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; border-radius: 6px;">● SİSTEM: AKTİF</span>
+        <span style="font-family: 'JetBrains Mono'; font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; border-radius: 6px;">PROTOKOL: 60-180 AY</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-col_sol, col_sag = st.columns([1, 1], gap="large")
+col_sol, col_sag = st.columns([1.15, 0.85], gap="large")
 
 # -----------------------------------------
-# SOL PANEL: ÖĞRENCİ BİLGİLERİ VE VERİ GİRİŞİ
+# SOL PANEL: DENEK GİRİŞİ VE SAYAÇ KONSOLU
 # -----------------------------------------
 with col_sol:
-    st.subheader("1. Öğrenci Bilgileri")
+    st.markdown('<div class="hud-card"><div class="card-title"><span>01. DENEK PROFİL & DEMOGRAFİ</span><span style="color:#64748b; font-family: \'JetBrains Mono\';">ID GİRİŞİ</span></div>', unsafe_allow_html=True)
     
-    arastirmaci = st.text_input("Araştırmacı Adı / Kodu (Örn: A-01)").strip()
-    ogrenci_kod = st.text_input("Öğrenci Kodu (Örn: OKL-001-K)").strip()
+    col_a, col_o = st.columns(2)
+    arastirmaci = col_a.text_input("Araştırmacı Kodu", placeholder="Örn: A-01").strip()
+    ogrenci_kod = col_o.text_input("Öğrenci Kodu", placeholder="Örn: OKL-001-K").strip()
     
     col_c, col_s = st.columns(2)
     cinsiyet = col_c.selectbox("Cinsiyet", ["Kız", "Erkek"])
     sed = col_s.selectbox("Okul SED Türü", ["Alt", "Orta", "Üst"])
     
-    secilen_okul = st.selectbox("Uygulama Yapılacak Okul", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
+    secilen_okul = st.selectbox("Uygulama Yapılan Okul", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
     
     col_d, col_t = st.columns(2)
-    # 60 - 180 ay aralığını kapsayacak şekilde takvim aralığı (2008 - 2022)
     dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2008, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
     test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
 
-    # Öğrencinin anlık yaş ve kota durumu hesabı
+    # Yaş ve Kota Telemetrisi
     yas_ay = None
     kota_durumu = "bekliyor"
     
@@ -142,9 +266,6 @@ with col_sol:
             ay_farki -= 1
         yas_ay = (yil_farki * 12) + ay_farki
         
-        st.markdown(f"**Hesaplanan Yaş:** `{yas_ay} Ay`")
-        
-        # 60 - 180 Ay Kontrolü
         if yas_ay < 60 or yas_ay > 180:
             st.error("❌ Bu öğrencinin yaşı (60 - 180 ay) örneklem kapsamı dışındadır.")
             kota_durumu = "gecersiz"
@@ -154,56 +275,67 @@ with col_sol:
             else:
                 mevcut_ogrenci = 0
                 
+            kalan_ihtiyac = max(0, 8 - mevcut_ogrenci)
+            
             if mevcut_ogrenci >= 10:
-                st.error(f"🚨 Bu grupta kota tamamen doldu! ({mevcut_ogrenci}/10). Veri girişi kilitlendi.")
+                rozet_html = '<span style="color:#f43f5e; font-family:\'JetBrains Mono\'; font-weight:700;">● KOTA DOLDU (10/10)</span>'
                 kota_durumu = "dolu"
             elif mevcut_ogrenci >= 8:
-                st.warning(f"⚠️ Kota hedefine ulaşıldı ({mevcut_ogrenci}/8). Mecbur kalmadıkça eklemeyiniz.")
+                rozet_html = '<span style="color:#f59e0b; font-family:\'JetBrains Mono\'; font-weight:700;">● HEDEF TAMAMLANDI (8/8)</span>'
                 kota_durumu = "uyari"
             else:
-                st.success(f"✅ Kota Açık ({mevcut_ogrenci}/8). Kalan İhtiyaç: {8 - mevcut_ogrenci}")
+                rozet_html = f'<span style="color:#10b981; font-family:\'JetBrains Mono\'; font-weight:700;">● KOTA AÇIK (KALAN: {kalan_ihtiyac})</span>'
                 kota_durumu = "uygun"
 
-    st.markdown("---")
-    st.subheader("2. Kronometre Süreleri (Saniye)")
+            st.markdown(f"""
+            <div class="telemetry-age-box">
+                <div>
+                    <div style="font-size:10px; font-weight:600; text-transform:uppercase; color:#64748b;">HESAPLANAN KRONOLOJİK YAŞ</div>
+                    <div style="font-family:'JetBrains Mono'; font-size:26px; font-weight:700; color:#38bdf8;">{yas_ay} <span style="font-size:12px; color:#94a3b8;">AY</span></div>
+                </div>
+                <div>{rozet_html}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+    st.markdown('</div>', unsafe_allow_html=True)
 
+    # Süre Konsolu Kartı
+    st.markdown('<div class="hud-card"><div class="card-title"><span>02. REAKSİYON & İSİMLENDİRME SÜRELERİ</span><span style="color:#f59e0b; font-family: \'JetBrains Mono\';">SANİYE (SN)</span></div>', unsafe_allow_html=True)
+    
     if kota_durumu == "dolu":
-        st.error("🔒 Bu alt grup için veri girişi kapalıdır.")
+        st.error("🔒 Bu yaş ve SED hücresi için veri girişi kilitlenmiştir.")
     elif not arastirmaci or not ogrenci_kod:
         st.info("ℹ️ Lütfen araştırmacı ve öğrenci kodunu giriniz.")
     elif kota_durumu in ["uygun", "uyari"]:
         c1, c2, c3, c4 = st.columns(4)
-        sure_sekil = c1.number_input("Şekil (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-        sure_renk  = c2.number_input("Renk (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-        sure_sayi  = c3.number_input("Sayı (sn)",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        sure_sayi  = c3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
         
         if yas_ay and yas_ay >= 83:
-            sure_harf = c4.number_input("Harf (sn)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+            sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
         else:
             sure_harf = 0.0
-            c4.info("Harf: 83+ ay")
+            c4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'JetBrains Mono\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
 
         st.write("")
-        kaydet_butonu = st.button("💾 VERİYİ HAVUZA KAYDET", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
+        kaydet = st.button("⚡ VERİYİ NORM HAVUZUNA İŞLE", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
         
-        if kaydet_butonu:
+        if kaydet:
             if sure_sekil < 10.0 or sure_renk < 10.0 or sure_sayi < 10.0 or (yas_ay and yas_ay >= 83 and sure_harf < 10.0):
-                st.error("Lütfen geçerli test süreleri (en az 10 sn) giriniz.")
+                st.error("Lütfen uygulanan tüm testler için 10 saniyeden büyük geçerli süreler giriniz.")
             else:
-                # 1. Çift Tıklama Koruması
                 st.session_state.kaydediliyor = True
-                
-                with st.spinner("Veri doğrulanıyor ve kaydediliyor, lütfen bekleyiniz..."):
+                with st.spinner("Telemetri verisi şifrelenip Google Sheets havuzuna işleniyor..."):
                     try:
                         client = get_gspread_client()
                         sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
                         sheet = client.open_by_url(sheet_url)
                         worksheet = sheet.worksheet("Sheet1")
                         
-                        # 2. Mükerrer / Duplicate Kontrolü (Aynı Öğrenci Kodu var mı?)
-                        mevcut_kodlar = [str(x).strip() for x in worksheet.col_values(3)[1:]] # 3. sütun Ogrenci_Kodu
+                        mevcut_kodlar = [str(x).strip() for x in worksheet.col_values(3)[1:]]
                         if ogrenci_kod in mevcut_kodlar:
-                            st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten kayıtlı! Mükerrer kayıt engellendi.")
+                            st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten mevcut! Mükerrer kayıt engellendi.")
                             st.session_state.kaydediliyor = False
                         else:
                             yeni_satir = [
@@ -221,31 +353,50 @@ with col_sol:
                                 sure_sayi,
                                 sure_harf
                             ]
-                            
                             worksheet.append_row(yeni_satir)
-                            st.success(f"🎉 {ogrenci_kod} başarıyla kaydedildi!")
+                            st.success(f"✓ {ogrenci_kod} başarıyla veri havuzuna işlendi.")
                             st.session_state.kaydediliyor = False
-                            st.rerun()  # Ekranı temizleyip kota tablosunu anında günceller
-                            
+                            st.rerun()
                     except Exception as e:
                         st.session_state.kaydediliyor = False
-                        st.error(f"Kayıt Hatası: {str(e)}")
+                        st.error(f"Hata: {str(e)}")
+                        
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------------------
-# SAĞ PANEL: CANLI KOTA VE İHTİYAÇ TABLOSU
+# SAĞ PANEL: ÖRNEKLEM VE KOTA RADARI
 # -----------------------------------------
 with col_sag:
-    st.subheader("📊 Canlı Kota ve İhtiyaç Durumu")
+    st.markdown('<div class="hud-card"><div class="card-title"><span>03. ULUSAL ÖRNEKLEM KOTA RADARI</span><span style="color:#64748b; font-family: \'JetBrains Mono\';">CANLI MATRİS</span></div>', unsafe_allow_html=True)
     
-    if st.button("🔄 Tabloyu Yenile", help="En son kayıtları çekmek için tıklayın"):
-        st.rerun()
+    toplam_kayit = len(df_mevcut) if not df_mevcut.empty else 0
+    toplam_hedef = 121 * 8 * 3 # 121 ay x 8 hedef x 3 SED = 2904
+    kalan_genel = max(0, toplam_hedef - toplam_kayit)
 
-    # Filtreleme Seçenekleri
-    f_col1, f_col2 = st.columns(2)
-    filtre_sed = f_col1.selectbox("Filtrelenecek SED Türü", ["Tümü", "Alt", "Orta", "Üst"])
-    filtre_durum = f_col2.selectbox("Kota Filtresi", ["Tümü", "Sadece İhtiyaç Olanlar (Açık)", "Dolanlar"])
+    # Üst İstatistik Sayaçları
+    st.markdown(f"""
+    <div class="stat-badge-grid">
+        <div class="stat-box">
+            <span style="font-size:10px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Mevcut N</span>
+            <span style="font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#38bdf8;">{toplam_kayit}</span>
+        </div>
+        <div class="stat-box">
+            <span style="font-size:10px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Hedef N</span>
+            <span style="font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#f8fafc;">{toplam_hedef}</span>
+        </div>
+        <div class="stat-box">
+            <span style="font-size:10px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Kalan İhtiyaç</span>
+            <span style="font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#10b981;">{kalan_genel}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # 60 - 180 ay arası (121 tekil ay)
+    # Filtreleme
+    f1, f2 = st.columns(2)
+    filtre_sed = f1.selectbox("SED Filtresi", ["Tümü", "Alt", "Orta", "Üst"])
+    filtre_durum = f2.selectbox("Kota Filtresi", ["Tümü", "Sadece Açık Olanlar", "Hedef Tamamlananlar"])
+
+    # Matris Oluşturma
     tum_satirlar = []
     sed_listesi = ["Alt", "Orta", "Üst"] if filtre_sed == "Tümü" else [filtre_sed]
     
@@ -256,42 +407,38 @@ with col_sag:
             else:
                 mevcut = 0
             
-            kalan_ihtiyac = max(0, 8 - mevcut)
+            kalan = max(0, 8 - mevcut)
             
             if mevcut >= 10:
                 durum = "🔴 Doldu"
             elif mevcut >= 8:
-                durum = "🟡 Hedef Tamam"
+                durum = "🟡 Tamam"
             else:
                 durum = "🟢 Açık"
                 
             tum_satirlar.append({
-                "Yaş Ayı": f"{ay} Ay",
+                "Yaş": f"{ay} Ay",
                 "SED": s,
-                "Mevcut Kayıt": mevcut,
-                "Hedef": 8,
-                "Kalan İhtiyaç": kalan_ihtiyac,
+                "Mevcut": mevcut,
+                "İhtiyaç": kalan,
                 "Durum": durum
             })
             
     df_kota = pd.DataFrame(tum_satirlar)
     
-    # Durum filtresi uygulama
-    if filtre_durum == "Sadece İhtiyaç Olanlar (Açık)":
-        df_kota = df_kota[df_kota["Kalan İhtiyaç"] > 0]
-    elif filtre_durum == "Dolanlar":
-        df_kota = df_kota[df_kota["Kalan İhtiyaç"] == 0]
+    if filtre_durum == "Sadece Açık Olanlar":
+        df_kota = df_kota[df_kota["İhtiyaç"] > 0]
+    elif filtre_durum == "Hedef Tamamlananlar":
+        df_kota = df_kota[df_kota["İhtiyaç"] == 0]
 
-    # Özet Sayılar: 60-180 ay arası 121 aydır
-    toplam_kayit = len(df_mevcut) if not df_mevcut.empty else 0
-    toplam_hedef = 121 * 8 * (3 if filtre_sed == "Tümü" else 1)
-    
-    st.markdown(f"**Toplam Girilen Kayıt:** `{toplam_kayit}` | **Hedeflenen Veri Sayısı:** `{toplam_hedef}`")
-    
-    # İnteraktif Tablo Gösterimi
     st.dataframe(
         df_kota,
         use_container_width=True,
         hide_index=True,
-        height=540
+        height=480
     )
+    
+    if st.button("🔄 Radarı Yenile", use_container_width=True):
+        st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
