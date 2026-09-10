@@ -21,7 +21,6 @@ st.markdown("""
       font-family: 'Inter', sans-serif !important;
   }
 
-  /* Girdi kutuları */
   div[data-baseweb="input"] {
       background-color: #0f172a !important;
       border: 1px solid rgba(56, 189, 248, 0.25) !important;
@@ -32,7 +31,7 @@ st.markdown("""
       color: #f8fafc !important;
   }
   div[data-baseweb="input"] input::placeholder {
-      color: #64748b !important;
+      color: #475569 !important;
   }
 
   div[data-baseweb="select"] > div {
@@ -45,6 +44,7 @@ st.markdown("""
       color: #f8fafc !important;
   }
 
+  /* Süre Sayaç Kutuları */
   input[type="number"] {
       font-family: 'JetBrains Mono', monospace !important;
       font-weight: 700 !important;
@@ -205,8 +205,15 @@ def get_data():
 
 df_mevcut = get_data()
 
+# Oturum Durumu Değişkenleri
 if "kaydediliyor" not in st.session_state:
     st.session_state.kaydediliyor = False
+
+# Kayıt sonrası toast bildirimi kontrolü
+if "basari_mesaji" in st.session_state:
+    st.toast(st.session_state.basari_mesaji, icon="✅")
+    st.success(st.session_state.basari_mesaji)
+    del st.session_state.basari_mesaji
 
 # --- ÜST TELEMETRİ BARI ---
 st.markdown("""
@@ -305,13 +312,14 @@ with col_sol:
     elif not arastirmaci or not ogrenci_kod:
         st.info("ℹ️ Lütfen araştırmacı ve öğrenci kodunu giriniz.")
     elif kota_durumu in ["uygun", "uyari"]:
+        # value=None ile kutular boş başlar, önceden 0.00 yazmaz!
         c1, c2, c3, c4 = st.columns(4)
-        sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-        sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
-        sure_sayi  = c3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+        sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
+        sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
+        sure_sayi  = c3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
 
         if yas_ay and yas_ay >= 83:
-            sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=0.0)
+            sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
         else:
             sure_harf = 0.0
             c4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'JetBrains Mono\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
@@ -320,8 +328,19 @@ with col_sol:
         kaydet = st.button("⚡ VERİYİ NORM HAVUZUNA İŞLE", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
 
         if kaydet:
-            if sure_sekil < 10.0 or sure_renk < 10.0 or sure_sayi < 10.0 or (yas_ay and yas_ay >= 83 and sure_harf < 10.0):
-                st.error("Lütfen uygulanan tüm testler için 10 saniyeden büyük geçerli süreler giriniz.")
+            # Boş bırakılan veya 10 saniyeden küçük girilen değer denetimi
+            hatali_giris = False
+            if sure_sekil is None or sure_sekil < 10.0:
+                hatali_giris = True
+            if sure_renk is None or sure_renk < 10.0:
+                hatali_giris = True
+            if sure_sayi is None or sure_sayi < 10.0:
+                hatali_giris = True
+            if yas_ay and yas_ay >= 83 and (sure_harf is None or sure_harf < 10.0):
+                hatali_giris = True
+
+            if hatali_giris:
+                st.error("Lütfen uygulanan tüm alt testlerin sürelerini eksiksiz ve geçerli (en az 10 sn) olarak giriniz.")
             else:
                 st.session_state.kaydediliyor = True
                 with st.spinner("Telemetri verisi şifrelenip Google Sheets havuzuna işleniyor..."):
@@ -349,15 +368,17 @@ with col_sol:
                                 sure_sekil,
                                 sure_renk,
                                 sure_sayi,
-                                sure_harf
+                                sure_harf if sure_harf is not None else 0.0
                             ]
                             worksheet.append_row(yeni_satir)
-                            st.success(f"✓ {ogrenci_kod} başarıyla veri havuzuna işlendi.")
+                            
+                            # Başarı bildirimini session_state'e kaydet ve sayfayı tazele
+                            st.session_state.basari_mesaji = f"İşlem Tamamlandı: {ogrenci_kod} başarıyla veri havuzuna işlendi!"
                             st.session_state.kaydediliyor = False
                             st.rerun()
                     except Exception as e:
                         st.session_state.kaydediliyor = False
-                        st.error(f"Hata: {str(e)}")
+                        st.error(f"Hata oluştu: {str(e)}")
 
 # -----------------------------------------
 # SAĞ PANEL: ÖRNEKLEM KOTA RADARI
@@ -429,7 +450,6 @@ with col_sag:
 
     df_matris = pd.DataFrame(matris_verisi)
 
-    # Streamlit Dataframe'i temiz, koyu ve hatasız render etme
     st.dataframe(
         df_matris,
         use_container_width=True,
