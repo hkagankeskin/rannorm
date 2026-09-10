@@ -101,6 +101,10 @@ def get_data():
 # Tablodan canlı verileri al
 df_mevcut = get_data()
 
+# --- ÇİFT TIKLAMA ÖNLEYİCİ DURUM YÖNETİMİ ---
+if "kaydediliyor" not in st.session_state:
+    st.session_state.kaydediliyor = False
+
 # --- ANA ARAYÜZ ---
 st.markdown("<h2 style='text-align: center; color: #1e3a8a;'>📋 RAN Ulusal Norm - Saha Veri Toplama Paneli</h2>", unsafe_allow_html=True)
 st.divider()
@@ -113,8 +117,8 @@ col_sol, col_sag = st.columns([1, 1], gap="large")
 with col_sol:
     st.subheader("1. Öğrenci Bilgileri")
     
-    arastirmaci = st.text_input("Araştırmacı Adı / Kodu (Örn: A-01)")
-    ogrenci_kod = st.text_input("Öğrenci Kodu (Örn: OKL-001-K)")
+    arastirmaci = st.text_input("Araştırmacı Adı / Kodu (Örn: A-01)").strip()
+    ogrenci_kod = st.text_input("Öğrenci Kodu (Örn: OKL-001-K)").strip()
     
     col_c, col_s = st.columns(2)
     cinsiyet = col_c.selectbox("Cinsiyet", ["Kız", "Erkek"])
@@ -123,10 +127,11 @@ with col_sol:
     secilen_okul = st.selectbox("Uygulama Yapılacak Okul", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
     
     col_d, col_t = st.columns(2)
-    dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2010, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
+    # 60 - 180 ay aralığını kapsayacak şekilde takvim aralığı (2008 - 2022)
+    dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2008, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
     test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
 
-    # Öğrencinin anlık kota durumu hesabı
+    # Öğrencinin anlık yaş ve kota durumu hesabı
     yas_ay = None
     kota_durumu = "bekliyor"
     
@@ -139,8 +144,9 @@ with col_sol:
         
         st.markdown(f"**Hesaplanan Yaş:** `{yas_ay} Ay`")
         
-        if yas_ay < 60 or yas_ay > 167:
-            st.error("❌ Bu öğrencinin yaşı (60-167 ay) örneklem kapsamı dışındadır.")
+        # 60 - 180 Ay Kontrolü
+        if yas_ay < 60 or yas_ay > 180:
+            st.error("❌ Bu öğrencinin yaşı (60 - 180 ay) örneklem kapsamı dışındadır.")
             kota_durumu = "gecersiz"
         else:
             if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns and "SED" in df_mevcut.columns:
@@ -178,37 +184,51 @@ with col_sol:
             c4.info("Harf: 83+ ay")
 
         st.write("")
-        if st.button("💾 VERİYİ HAVUZA KAYDET", use_container_width=True, type="primary"):
+        kaydet_butonu = st.button("💾 VERİYİ HAVUZA KAYDET", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
+        
+        if kaydet_butonu:
             if sure_sekil < 10.0 or sure_renk < 10.0 or sure_sayi < 10.0 or (yas_ay and yas_ay >= 83 and sure_harf < 10.0):
                 st.error("Lütfen geçerli test süreleri (en az 10 sn) giriniz.")
             else:
-                with st.spinner("Kaydediliyor..."):
+                # 1. Çift Tıklama Koruması
+                st.session_state.kaydediliyor = True
+                
+                with st.spinner("Veri doğrulanıyor ve kaydediliyor, lütfen bekleyiniz..."):
                     try:
                         client = get_gspread_client()
                         sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
                         sheet = client.open_by_url(sheet_url)
                         worksheet = sheet.worksheet("Sheet1")
                         
-                        yeni_satir = [
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            arastirmaci,
-                            ogrenci_kod,
-                            cinsiyet,
-                            sed,
-                            secilen_okul,
-                            dogum_tarihi.strftime("%Y-%m-%d"),
-                            test_tarihi.strftime("%Y-%m-%d"),
-                            yas_ay,
-                            sure_sekil,
-                            sure_renk,
-                            sure_sayi,
-                            sure_harf
-                        ]
-                        
-                        worksheet.append_row(yeni_satir)
-                        st.success(f"🎉 {ogrenci_kod} başarıyla kaydedildi!")
-                        st.rerun()  # Tabloyu anında güncellemek için sayfayı yeniler
+                        # 2. Mükerrer / Duplicate Kontrolü (Aynı Öğrenci Kodu var mı?)
+                        mevcut_kodlar = [str(x).strip() for x in worksheet.col_values(3)[1:]] # 3. sütun Ogrenci_Kodu
+                        if ogrenci_kod in mevcut_kodlar:
+                            st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten kayıtlı! Mükerrer kayıt engellendi.")
+                            st.session_state.kaydediliyor = False
+                        else:
+                            yeni_satir = [
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                arastirmaci,
+                                ogrenci_kod,
+                                cinsiyet,
+                                sed,
+                                secilen_okul,
+                                dogum_tarihi.strftime("%Y-%m-%d"),
+                                test_tarihi.strftime("%Y-%m-%d"),
+                                yas_ay,
+                                sure_sekil,
+                                sure_renk,
+                                sure_sayi,
+                                sure_harf
+                            ]
+                            
+                            worksheet.append_row(yeni_satir)
+                            st.success(f"🎉 {ogrenci_kod} başarıyla kaydedildi!")
+                            st.session_state.kaydediliyor = False
+                            st.rerun()  # Ekranı temizleyip kota tablosunu anında günceller
+                            
                     except Exception as e:
+                        st.session_state.kaydediliyor = False
                         st.error(f"Kayıt Hatası: {str(e)}")
 
 # -----------------------------------------
@@ -225,11 +245,11 @@ with col_sag:
     filtre_sed = f_col1.selectbox("Filtrelenecek SED Türü", ["Tümü", "Alt", "Orta", "Üst"])
     filtre_durum = f_col2.selectbox("Kota Filtresi", ["Tümü", "Sadece İhtiyaç Olanlar (Açık)", "Dolanlar"])
 
-    # Bütün 60-167 ay ve SED kombinasyonları için kota matrisi oluşturma
+    # 60 - 180 ay arası (121 tekil ay)
     tum_satirlar = []
     sed_listesi = ["Alt", "Orta", "Üst"] if filtre_sed == "Tümü" else [filtre_sed]
     
-    for ay in range(60, 168):
+    for ay in range(60, 181):
         for s in sed_listesi:
             if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns and "SED" in df_mevcut.columns:
                 mevcut = len(df_mevcut[(df_mevcut["Yas_Ayi"] == ay) & (df_mevcut["SED"] == s)])
@@ -262,9 +282,9 @@ with col_sag:
     elif filtre_durum == "Dolanlar":
         df_kota = df_kota[df_kota["Kalan İhtiyaç"] == 0]
 
-    # Özet Sayılar
+    # Özet Sayılar: 60-180 ay arası 121 aydır
     toplam_kayit = len(df_mevcut) if not df_mevcut.empty else 0
-    toplam_hedef = 108 * 8 * (3 if filtre_sed == "Tümü" else 1)
+    toplam_hedef = 121 * 8 * (3 if filtre_sed == "Tümü" else 1)
     
     st.markdown(f"**Toplam Girilen Kayıt:** `{toplam_kayit}` | **Hedeflenen Veri Sayısı:** `{toplam_hedef}`")
     
