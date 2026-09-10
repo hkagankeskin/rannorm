@@ -15,14 +15,13 @@ st.markdown("""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
-  /* Genel Arka Plan ve Metin */
   .stApp {
       background-color: #0a0f1d !important;
       color: #f8fafc !important;
       font-family: 'Inter', sans-serif !important;
   }
 
-  /* Tüm Metin ve Sayı Giriş Kutuları */
+  /* Girdi kutuları */
   div[data-baseweb="input"] {
       background-color: #0f172a !important;
       border: 1px solid rgba(56, 189, 248, 0.25) !important;
@@ -36,7 +35,6 @@ st.markdown("""
       color: #64748b !important;
   }
 
-  /* Selectbox / Açılır Menüler */
   div[data-baseweb="select"] > div {
       background-color: #0f172a !important;
       border: 1px solid rgba(56, 189, 248, 0.25) !important;
@@ -47,7 +45,6 @@ st.markdown("""
       color: #f8fafc !important;
   }
 
-  /* Kronometre Sayı Girişleri (Dijital Sayaç Fontu) */
   input[type="number"] {
       font-family: 'JetBrains Mono', monospace !important;
       font-weight: 700 !important;
@@ -56,7 +53,6 @@ st.markdown("""
       text-align: center !important;
   }
 
-  /* Form Başlıkları / Etiketler */
   label p {
       font-size: 11px !important;
       font-weight: 600 !important;
@@ -65,7 +61,6 @@ st.markdown("""
       color: #94a3b8 !important;
   }
 
-  /* Buton Stili (Neon Gradyan) */
   div.stButton > button[kind="primary"] {
       background: linear-gradient(135deg, #0284c7, #2563eb) !important;
       border: 1px solid rgba(56, 189, 248, 0.4) !important;
@@ -82,7 +77,6 @@ st.markdown("""
       transform: translateY(-1px) !important;
   }
 
-  /* Telemetri Kart Başlıkları */
   .section-header {
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid rgba(56, 189, 248, 0.2);
@@ -107,7 +101,6 @@ st.markdown("""
       color: #64748b;
   }
 
-  /* Yaş Göstergesi Kartı */
   .telemetry-age-box {
       background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.8));
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -117,64 +110,6 @@ st.markdown("""
       align-items: center;
       justify-content: space-between;
       margin: 14px 0;
-  }
-
-  /* Sağ Panel Kota Tablosu (Demodaki Koyu Tasarım) */
-  .hud-table-wrapper {
-      max-height: 480px;
-      overflow-y: auto;
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      border-radius: 8px;
-      background: #0f172a;
-  }
-  .hud-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      text-align: left;
-  }
-  .hud-table thead th {
-      background: #0a0f1d;
-      color: #94a3b8;
-      font-size: 11px;
-      text-transform: uppercase;
-      font-weight: 600;
-      padding: 10px 14px;
-      position: sticky;
-      top: 0;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-  }
-  .hud-table tbody tr {
-      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-  }
-  .hud-table tbody tr:hover {
-      background: rgba(56, 189, 248, 0.06);
-  }
-  .hud-table td {
-      padding: 8px 14px;
-      font-family: 'JetBrains Mono', monospace;
-      color: #f8fafc;
-  }
-  .badge-open {
-      color: #10b981;
-      background: rgba(16, 185, 129, 0.12);
-      padding: 3px 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-  .badge-target {
-      color: #f59e0b;
-      background: rgba(245, 158, 11, 0.12);
-      padding: 3px 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-  }
-  .badge-locked {
-      color: #f43f5e;
-      background: rgba(244, 63, 94, 0.12);
-      padding: 3px 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(244, 63, 94, 0.3);
   }
 </style>
 """, unsafe_allow_html=True)
@@ -316,7 +251,6 @@ with col_sol:
     dogum_tarihi = col_d.date_input("Doğum Tarihi", min_value=date(2008, 1, 1), max_value=date(2022, 12, 31), format="DD.MM.YYYY")
     test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
 
-    # Yaş ve Kota Telemetrisi
     yas_ay = None
     kota_durumu = "bekliyor"
 
@@ -426,7 +360,7 @@ with col_sol:
                         st.error(f"Hata: {str(e)}")
 
 # -----------------------------------------
-# SAĞ PANEL: DEMODAKİ ÖRNEKLEM KOTA RADARI
+# SAĞ PANEL: ÖRNEKLEM KOTA RADARI
 # -----------------------------------------
 with col_sag:
     st.markdown("""
@@ -440,7 +374,6 @@ with col_sag:
     toplam_hedef = 121 * 8 * 3
     kalan_genel = max(0, toplam_hedef - toplam_kayit)
 
-    # Üst Sayaç Kutuları
     st.markdown(f"""
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
         <div style="background:#0f172a; border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:10px; text-align:center;">
@@ -462,9 +395,8 @@ with col_sag:
     filtre_sed = f1.selectbox("SED Filtresi", ["Tümü", "Alt", "Orta", "Üst"])
     filtre_durum = f2.selectbox("Kota Filtresi", ["Tümü", "Sadece Açık Olanlar", "Hedef Tamamlananlar"])
 
-    # Demodaki Koyu HTML Tablosunu Oluşturma
     sed_listesi = ["Alt", "Orta", "Üst"] if filtre_sed == "Tümü" else [filtre_sed]
-    tablo_satirlari_html = ""
+    matris_verisi = []
 
     for ay in range(60, 181):
         for s in sed_listesi:
@@ -481,43 +413,29 @@ with col_sag:
                 continue
 
             if mevcut >= 10:
-                badge = '<span class="badge-locked">Kilitli</span>'
+                durum = "🔴 Kilitli"
             elif mevcut >= 8:
-                badge = '<span class="badge-target">Hedef Tamam</span>'
+                durum = "🟡 Hedef Tamam"
             else:
-                badge = '<span class="badge-open">Açık</span>'
+                durum = "🟢 Açık"
 
-            # Öğrencinin o anki yaşıyla eşleşen satırı hafif siyan renkle aydınlat
-            satir_stili = ' style="background: rgba(56, 189, 248, 0.08);"' if yas_ay == ay else ""
+            matris_verisi.append({
+                "Yaş Ayı": f"{ay} Ay",
+                "SED": s,
+                "Mevcut": mevcut,
+                "İhtiyaç": kalan,
+                "Durum": durum
+            })
 
-            tablo_satirlari_html += f"""
-            <tr{satir_stili}>
-                <td>{ay} Ay</td>
-                <td>{s}</td>
-                <td>{mevcut}</td>
-                <td>{kalan}</td>
-                <td>{badge}</td>
-            </tr>
-            """
+    df_matris = pd.DataFrame(matris_verisi)
 
-    st.markdown(f"""
-    <div class="hud-table-wrapper">
-        <table class="hud-table">
-            <thead>
-                <tr>
-                    <th>Yaş Ayı</th>
-                    <th>SED</th>
-                    <th>Mevcut</th>
-                    <th>İhtiyaç</th>
-                    <th>Durum</th>
-                </tr>
-            </thead>
-            <tbody>
-                {tablo_satirlari_html}
-            </tbody>
-        </table>
-    </div>
-    """, unsafe_allow_html=True)
+    # Streamlit Dataframe'i temiz, koyu ve hatasız render etme
+    st.dataframe(
+        df_matris,
+        use_container_width=True,
+        hide_index=True,
+        height=480
+    )
 
     st.write("")
     if st.button("🔄 Radarı Yenile", use_container_width=True):
