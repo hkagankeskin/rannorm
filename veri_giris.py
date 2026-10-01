@@ -10,79 +10,93 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- DERİN KOYU BİLİŞSEL HUD CSS ---
+# --- SOFT & MODERN BİLİŞSEL TELEMETRİ TEMASI ---
 st.markdown("""
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
+  /* Zemin ve Tipografi */
   .stApp {
-      background-color: #0a0f1d !important;
-      color: #f8fafc !important;
-      font-family: 'Inter', sans-serif !important;
+      background-color: #0b1120 !important;
+      color: #e2e8f0 !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
   }
 
+  /* Girdi Alanları */
   div[data-baseweb="input"] {
-      background-color: #0f172a !important;
-      border: 1px solid rgba(56, 189, 248, 0.25) !important;
-      border-radius: 8px !important;
+      background-color: #131d32 !important;
+      border: 1px solid rgba(148, 163, 184, 0.18) !important;
+      border-radius: 9px !important;
+      transition: all 0.2s ease !important;
+  }
+  div[data-baseweb="input"]:focus-within {
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.15) !important;
   }
   div[data-baseweb="input"] input {
-      background-color: #0f172a !important;
-      color: #f8fafc !important;
+      background-color: transparent !important;
+      color: #f1f5f9 !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-size: 13.5px !important;
   }
   div[data-baseweb="input"] input::placeholder {
       color: #475569 !important;
   }
 
+  /* Selectbox / Açılır Menüler */
   div[data-baseweb="select"] > div {
-      background-color: #0f172a !important;
-      border: 1px solid rgba(56, 189, 248, 0.25) !important;
-      color: #f8fafc !important;
-      border-radius: 8px !important;
+      background-color: #131d32 !important;
+      border: 1px solid rgba(148, 163, 184, 0.18) !important;
+      color: #f1f5f9 !important;
+      border-radius: 9px !important;
   }
   div[data-baseweb="select"] * {
-      color: #f8fafc !important;
+      color: #f1f5f9 !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
   }
 
-  /* Süre Sayaç Kutuları */
+  /* Kronometre Süre Sayaç Kutuları */
   input[type="number"] {
-      font-family: 'JetBrains Mono', monospace !important;
-      font-weight: 700 !important;
-      font-size: 18px !important;
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-weight: 600 !important;
+      font-size: 19px !important;
       color: #38bdf8 !important;
       text-align: center !important;
   }
 
+  /* Alan Etiketleri */
   label p {
-      font-size: 11px !important;
+      font-size: 11.5px !important;
       font-weight: 600 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.5px !important;
+      letter-spacing: 0.3px !important;
       color: #94a3b8 !important;
   }
 
+  /* Kaydet Butonu */
   div.stButton > button[kind="primary"] {
       background: linear-gradient(135deg, #0284c7, #2563eb) !important;
-      border: 1px solid rgba(56, 189, 248, 0.4) !important;
+      border: 1px solid rgba(56, 189, 248, 0.35) !important;
       color: #ffffff !important;
-      border-radius: 10px !important;
+      border-radius: 9px !important;
       font-weight: 600 !important;
       font-size: 14px !important;
-      letter-spacing: 0.5px !important;
-      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4) !important;
+      letter-spacing: 0.3px !important;
+      padding: 10px 20px !important;
+      box-shadow: 0 4px 18px rgba(37, 99, 235, 0.3) !important;
       transition: all 0.2s ease !important;
   }
   div.stButton > button[kind="primary"]:hover {
-      box-shadow: 0 6px 25px rgba(56, 189, 248, 0.7) !important;
+      box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
       transform: translateY(-1px) !important;
   }
 
+  /* Kart ve Başlıklar */
   .section-header {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      border-left: 4px solid #38bdf8;
-      padding: 8px 14px;
-      border-radius: 6px;
+      background: rgba(19, 29, 50, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-left: 3px solid #38bdf8;
+      padding: 9px 14px;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -91,20 +105,20 @@ st.markdown("""
   .section-header span.title {
       font-size: 12px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       color: #38bdf8;
   }
   .section-header span.tag {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Space Grotesk', monospace;
       font-size: 11px;
       color: #64748b;
   }
 
+  /* Yaş Göstergesi Kartı */
   .telemetry-age-box {
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.8));
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(19, 29, 50, 0.7));
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 9px;
       padding: 12px 18px;
       display: flex;
       align-items: center;
@@ -171,6 +185,26 @@ OKUL_LISTESI = {
     ]
 }
 
+# --- 60 AYDAN BAŞLAYAN 3 AYLIK DİLİMLER ---
+def get_yas_dilimi(ay):
+    if ay < 60 or ay > 180:
+        return None
+    if ay == 180:
+        return "180 Ay"
+    baslangic = ((ay - 60) // 3) * 3 + 60
+    bitis = baslangic + 2
+    return f"{baslangic}-{bitis} Ay"
+
+def get_tum_dilimler():
+    dilimler = []
+    for baslangic in range(60, 180, 3):
+        dilimler.append(f"{baslangic}-{baslangic+2} Ay")
+    dilimler.append("180 Ay")
+    return dilimler
+
+# Hücre (Ay x SED) başına hedeflenen öğrenci sayısı (Sürekli Normlama İçin)
+HEDEF_KISI_SAYISI = 15
+
 # --- GOOGLE SHEETS BAĞLANTISI ---
 def get_gspread_client():
     scope = [
@@ -205,11 +239,16 @@ def get_data():
 
 df_mevcut = get_data()
 
-# Oturum Durumu Değişkenleri
+# DataFrame'e dilim kolonunu ekleyelim
+if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns:
+    df_mevcut["Yas_Dilimi"] = df_mevcut["Yas_Ayi"].apply(lambda x: get_yas_dilimi(pd.to_numeric(x, errors="coerce")))
+else:
+    df_mevcut["Yas_Dilimi"] = None
+
 if "kaydediliyor" not in st.session_state:
     st.session_state.kaydediliyor = False
 
-# Kayıt sonrası toast bildirimi kontrolü
+# Kayıt sonrası toast bildirimi
 if "basari_mesaji" in st.session_state:
     st.toast(st.session_state.basari_mesaji, icon="✅")
     st.success(st.session_state.basari_mesaji)
@@ -217,16 +256,16 @@ if "basari_mesaji" in st.session_state:
 
 # --- ÜST TELEMETRİ BARI ---
 st.markdown("""
-<div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.2); padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+<div style="background: rgba(19, 29, 50, 0.9); border: 1px solid rgba(148, 163, 184, 0.12); padding: 12px 20px; border-radius: 9px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
     <div>
-        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #f8fafc; letter-spacing: 0.5px;">
-            ⚡ RAN ULUSAL NORM ÇALIŞMASI <span style="font-size: 10px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">SAHA HUD V2</span>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #f8fafc; letter-spacing: 0.3px;">
+            RAN Ulusal Norm Çalışması <span style="font-size: 10px; padding: 2px 8px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">SAHA PANELİ</span>
         </h3>
-        <p style="margin: 2px 0 0 0; font-size: 11px; color: #94a3b8;">Bilişsel İsimlendirme Hızı ve Örneklem Veri Toplama İstasyonu</p>
+        <p style="margin: 2px 0 0 0; font-size: 11.5px; color: #94a3b8;">Bilişsel İsimlendirme Hızı ve Örneklem Veri Toplama İstasyonu (Sürekli Normlama Modeli)</p>
     </div>
     <div style="display: flex; gap: 10px;">
-        <span style="font-family: 'JetBrains Mono'; font-size: 11px; padding: 4px 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; border-radius: 6px;">● SİSTEM: AKTİF</span>
-        <span style="font-family: 'JetBrains Mono'; font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; border-radius: 6px;">PROTOKOL: 60-180 AY</span>
+        <span style="font-family: 'Space Grotesk'; font-size: 11px; padding: 4px 10px; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.25); color: #34d399; border-radius: 6px;">● SİSTEM AKTİF</span>
+        <span style="font-family: 'Space Grotesk'; font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; border-radius: 6px;">PROTOKOL: 60-180 AY (3 AYLIK BLOKLAR)</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -239,13 +278,13 @@ col_sol, col_sag = st.columns([1.15, 0.85], gap="large")
 with col_sol:
     st.markdown("""
     <div class="section-header">
-        <span class="title">01. DENEK PROFİL & DEMOGRAFİ</span>
-        <span class="tag">ID GİRİŞİ</span>
+        <span class="title">01. ÖĞRENCİ VE DEMOGRAFİ</span>
+        <span class="tag">GİRİŞ PANELİ</span>
     </div>
     """, unsafe_allow_html=True)
 
     col_a, col_o = st.columns(2)
-    arastirmaci = col_a.text_input("Araştırmacı Kodu", placeholder="Örn: A-01").strip()
+    arastirmaci = col_a.text_input("Araştırmacı", placeholder="Örn: Ayşe Yılmaz / A-01").strip()
     ogrenci_kod = col_o.text_input("Öğrenci Kodu", placeholder="Örn: OKL-001-K").strip()
 
     col_c, col_s = st.columns(2)
@@ -259,6 +298,7 @@ with col_sol:
     test_tarihi = col_t.date_input("Test Tarihi", value=date.today(), format="DD.MM.YYYY")
 
     yas_ay = None
+    yas_dilimi = None
     kota_durumu = "bekliyor"
 
     if dogum_tarihi and test_tarihi:
@@ -267,33 +307,34 @@ with col_sol:
         if test_tarihi.day < dogum_tarihi.day:
             ay_farki -= 1
         yas_ay = (yil_farki * 12) + ay_farki
+        yas_dilimi = get_yas_dilimi(yas_ay)
 
         if yas_ay < 60 or yas_ay > 180:
             st.error("❌ Bu öğrencinin yaşı (60 - 180 ay) örneklem kapsamı dışındadır.")
             kota_durumu = "gecersiz"
         else:
-            if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns and "SED" in df_mevcut.columns:
-                mevcut_ogrenci = len(df_mevcut[(df_mevcut["Yas_Ayi"] == yas_ay) & (df_mevcut["SED"] == sed)])
+            if not df_mevcut.empty and "Yas_Dilimi" in df_mevcut.columns and "SED" in df_mevcut.columns:
+                mevcut_ogrenci = len(df_mevcut[(df_mevcut["Yas_Dilimi"] == yas_dilimi) & (df_mevcut["SED"] == sed)])
             else:
                 mevcut_ogrenci = 0
 
-            kalan_ihtiyac = max(0, 8 - mevcut_ogrenci)
+            kalan_ihtiyac = max(0, HEDEF_KISI_SAYISI - mevcut_ogrenci)
 
-            if mevcut_ogrenci >= 10:
-                rozet_html = '<span style="color:#f43f5e; font-family:\'JetBrains Mono\'; font-weight:700;">● KOTA DOLDU (10/10)</span>'
-                kota_durumu = "dolu"
-            elif mevcut_ogrenci >= 8:
-                rozet_html = '<span style="color:#f59e0b; font-family:\'JetBrains Mono\'; font-weight:700;">● HEDEF TAMAMLANDI (8/8)</span>'
-                kota_durumu = "uyari"
+            # KOTA DOLSA BİLE KİLİTLEME YOK (Sürekli Normlama Esnekliği)
+            if mevcut_ogrenci >= HEDEF_KISI_SAYISI:
+                rozet_html = f'<span style="color:#f87171; font-family:\'Space Grotesk\'; font-weight:700;">🔴 DOLDU ({mevcut_ogrenci}/{HEDEF_KISI_SAYISI}) — GİRİŞ AÇIK</span>'
+                kota_durumu = "dolu_ama_acik"
             else:
-                rozet_html = f'<span style="color:#10b981; font-family:\'JetBrains Mono\'; font-weight:700;">● KOTA AÇIK (KALAN: {kalan_ihtiyac})</span>'
+                rozet_html = f'<span style="color:#34d399; font-family:\'Space Grotesk\'; font-weight:700;">🟢 KOTA AÇIK (İhtiyaç: {kalan_ihtiyac})</span>'
                 kota_durumu = "uygun"
 
             st.markdown(f"""
             <div class="telemetry-age-box">
                 <div>
-                    <div style="font-size:10px; font-weight:600; text-transform:uppercase; color:#64748b;">HESAPLANAN KRONOLOJİK YAŞ</div>
-                    <div style="font-family:'JetBrains Mono'; font-size:26px; font-weight:700; color:#38bdf8;">{yas_ay} <span style="font-size:12px; color:#94a3b8;">AY</span></div>
+                    <div style="font-size:10px; font-weight:600; text-transform:uppercase; color:#94a3b8;">HESAPLANAN YAŞ VE DİLİM</div>
+                    <div style="font-family:'Space Grotesk'; font-size:22px; font-weight:700; color:#38bdf8;">
+                        {yas_ay} Ay <span style="font-size:13px; color:#cbd5e1; font-weight:500;">({yas_dilimi})</span>
+                    </div>
                 </div>
                 <div>{rozet_html}</div>
             </div>
@@ -302,17 +343,14 @@ with col_sol:
     st.write("")
     st.markdown("""
     <div class="section-header">
-        <span class="title">02. REAKSİYON & İSİMLENDİRME SÜRELERİ</span>
-        <span class="tag" style="color:#f59e0b;">SANİYE (SN)</span>
+        <span class="title">02. REAKSİYON VE İSİMLENDİRME SÜRELERİ</span>
+        <span class="tag" style="color:#fbbf24;">SANİYE (SN)</span>
     </div>
     """, unsafe_allow_html=True)
 
-    if kota_durumu == "dolu":
-        st.error("🔒 Bu yaş ve SED hücresi için veri girişi kilitlenmiştir.")
-    elif not arastirmaci or not ogrenci_kod:
-        st.info("ℹ️ Lütfen araştırmacı ve öğrenci kodunu giriniz.")
-    elif kota_durumu in ["uygun", "uyari"]:
-        # value=None ile kutular boş başlar, önceden 0.00 yazmaz!
+    if not arastirmaci or not ogrenci_kod:
+        st.info("ℹ️ Lütfen araştırmacı adını ve öğrenci kodunu giriniz.")
+    elif kota_durumu in ["uygun", "dolu_ama_acik"]:
         c1, c2, c3, c4 = st.columns(4)
         sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
         sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
@@ -322,13 +360,12 @@ with col_sol:
             sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
         else:
             sure_harf = 0.0
-            c4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'JetBrains Mono\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
+            c4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
 
         st.write("")
         kaydet = st.button("⚡ VERİYİ NORM HAVUZUNA İŞLE", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
 
         if kaydet:
-            # Boş bırakılan veya 10 saniyeden küçük girilen değer denetimi
             hatali_giris = False
             if sure_sekil is None or sure_sekil < 10.0:
                 hatali_giris = True
@@ -340,19 +377,20 @@ with col_sol:
                 hatali_giris = True
 
             if hatali_giris:
-                st.error("Lütfen uygulanan tüm alt testlerin sürelerini eksiksiz ve geçerli (en az 10 sn) olarak giriniz.")
+                st.error("Lütfen uygulanan tüm testler için en az 10 saniye geçerli bir süre giriniz.")
             else:
                 st.session_state.kaydediliyor = True
-                with st.spinner("Telemetri verisi şifrelenip Google Sheets havuzuna işleniyor..."):
+                with st.spinner("Veri Google Sheets havuzuna işleniyor..."):
                     try:
                         client = get_gspread_client()
                         sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
                         sheet = client.open_by_url(sheet_url)
                         worksheet = sheet.worksheet("Sheet1")
 
+                        # Mükerrer Öğrenci Kodu Kontrolü
                         mevcut_kodlar = [str(x).strip() for x in worksheet.col_values(3)[1:]]
                         if ogrenci_kod in mevcut_kodlar:
-                            st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten kayıtlı! Mükerrer kayıt engellendi.")
+                            st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten mevcut! Mükerrer kayıt engellendi.")
                             st.session_state.kaydediliyor = False
                         else:
                             yeni_satir = [
@@ -371,9 +409,7 @@ with col_sol:
                                 sure_harf if sure_harf is not None else 0.0
                             ]
                             worksheet.append_row(yeni_satir)
-                            
-                            # Başarı bildirimini session_state'e kaydet ve sayfayı tazele
-                            st.session_state.basari_mesaji = f"İşlem Tamamlandı: {ogrenci_kod} başarıyla veri havuzuna işlendi!"
+                            st.session_state.basari_mesaji = f"İşlem Tamamlandı: {ogrenci_kod} başarıyla norm havuzuna işlendi!"
                             st.session_state.kaydediliyor = False
                             st.rerun()
                     except Exception as e:
@@ -381,69 +417,69 @@ with col_sol:
                         st.error(f"Hata oluştu: {str(e)}")
 
 # -----------------------------------------
-# SAĞ PANEL: ÖRNEKLEM KOTA RADARI
+# SAĞ PANEL: 3 AYLIK KOTA RADARI (60-180 AY)
 # -----------------------------------------
 with col_sag:
     st.markdown("""
     <div class="section-header">
-        <span class="title">03. ULUSAL ÖRNEKLEM KOTA RADARI</span>
+        <span class="title">03. 3 AYLIK BLOK KOTA RADARI</span>
         <span class="tag">CANLI MATRİS</span>
     </div>
     """, unsafe_allow_html=True)
 
-    toplam_kayit = len(df_mevcut) if not df_mevcut.empty else 0
-    toplam_hedef = 121 * 8 * 3
+    tum_dilimler = get_tum_dilimler()
+    toplam_kayit = len(df_mevcut[df_mevcut["Yas_Dilimi"].notna()]) if not df_mevcut.empty else 0
+    toplam_hedef = len(tum_dilimler) * HEDEF_KISI_SAYISI * 3 # 41 dilim x 15 kişi x 3 SED = 1845 öğrenci
     kalan_genel = max(0, toplam_hedef - toplam_kayit)
 
     st.markdown(f"""
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
-        <div style="background:#0f172a; border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:10px; text-align:center;">
-            <span style="font-size:10px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Mevcut N</span>
-            <span style="font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#38bdf8;">{toplam_kayit}</span>
+        <div style="background:#131d32; border:1px solid rgba(148,163,184,0.12); border-radius:8px; padding:10px; text-align:center;">
+            <span style="font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:600; display:block;">Mevcut N</span>
+            <span style="font-family:'Space Grotesk'; font-size:18px; font-weight:700; color:#38bdf8;">{toplam_kayit}</span>
         </div>
-        <div style="background:#0f172a; border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:10px; text-align:center;">
-            <span style="font-size:10px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Hedef N</span>
-            <span style="font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#f8fafc;">{toplam_hedef}</span>
+        <div style="background:#131d32; border:1px solid rgba(148,163,184,0.12); border-radius:8px; padding:10px; text-align:center;">
+            <span style="font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:600; display:block;">Hedef N</span>
+            <span style="font-family:'Space Grotesk'; font-size:18px; font-weight:700; color:#f8fafc;">{toplam_hedef}</span>
         </div>
-        <div style="background:#0f172a; border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:10px; text-align:center;">
-            <span style="font-size:10px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Kalan İhtiyaç</span>
-            <span style="font-family:'JetBrains Mono'; font-size:18px; font-weight:700; color:#10b981;">{kalan_genel}</span>
+        <div style="background:#131d32; border:1px solid rgba(148,163,184,0.12); border-radius:8px; padding:10px; text-align:center;">
+            <span style="font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:600; display:block;">Kalan İhtiyaç</span>
+            <span style="font-family:'Space Grotesk'; font-size:18px; font-weight:700; color:#34d399;">{kalan_genel}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     f1, f2 = st.columns(2)
     filtre_sed = f1.selectbox("SED Filtresi", ["Tümü", "Alt", "Orta", "Üst"])
-    filtre_durum = f2.selectbox("Kota Filtresi", ["Tümü", "Sadece Açık Olanlar", "Hedef Tamamlananlar"])
+    filtre_durum = f2.selectbox("Kota Filtresi", ["Tümü", "Sadece Açık Olanlar", "Dolup Aşanlar"])
 
     sed_listesi = ["Alt", "Orta", "Üst"] if filtre_sed == "Tümü" else [filtre_sed]
     matris_verisi = []
 
-    for ay in range(60, 181):
+    for d in tum_dilimler:
         for s in sed_listesi:
-            if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns and "SED" in df_mevcut.columns:
-                mevcut = len(df_mevcut[(df_mevcut["Yas_Ayi"] == ay) & (df_mevcut["SED"] == s)])
+            if not df_mevcut.empty and "Yas_Dilimi" in df_mevcut.columns and "SED" in df_mevcut.columns:
+                mevcut = len(df_mevcut[(df_mevcut["Yas_Dilimi"] == d) & (df_mevcut["SED"] == s)])
             else:
                 mevcut = 0
 
-            kalan = max(0, 8 - mevcut)
+            kalan = max(0, HEDEF_KISI_SAYISI - mevcut)
 
             if filtre_durum == "Sadece Açık Olanlar" and kalan == 0:
                 continue
-            if filtre_durum == "Hedef Tamamlananlar" and kalan > 0:
+            if filtre_durum == "Dolup Aşanlar" and kalan > 0:
                 continue
 
-            if mevcut >= 10:
-                durum = "🔴 Kilitli"
-            elif mevcut >= 8:
-                durum = "🟡 Hedef Tamam"
+            if mevcut >= HEDEF_KISI_SAYISI:
+                durum = "🔴 Doldu (Giriş Açık)"
             else:
                 durum = "🟢 Açık"
 
             matris_verisi.append({
-                "Yaş Ayı": f"{ay} Ay",
+                "Yaş Dilimi": d,
                 "SED": s,
                 "Mevcut": mevcut,
+                "Hedef": HEDEF_KISI_SAYISI,
                 "İhtiyaç": kalan,
                 "Durum": durum
             })
