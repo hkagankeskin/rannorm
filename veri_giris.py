@@ -120,7 +120,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- OKUL LİSTESİ ---
 OKUL_LISTESI = {
     "Alt": [
         "Karapürçek Abdülhamit Han Anaokulu (ALTINDAĞ)",
@@ -215,7 +214,6 @@ def get_gspread_client():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     return gspread.authorize(creds)
 
-# CACHE EKLENDİ: Sistemin her harf basışta yavaşlamasını engeller
 @st.cache_data(ttl=60)
 def get_data():
     try:
@@ -238,7 +236,6 @@ else:
 if "kaydediliyor" not in st.session_state:
     st.session_state.kaydediliyor = False
 
-# Bildirim Gösterimi
 if "basari_mesaji" in st.session_state:
     st.toast(st.session_state.basari_mesaji, icon="✅")
     st.success(st.session_state.basari_mesaji)
@@ -270,11 +267,7 @@ with col_sol:
     """, unsafe_allow_html=True)
 
     col_a, col_o = st.columns(2)
-    
-    # Araştırmacı hücresi silinmemesi için key atandı
     arastirmaci = col_a.text_input("Araştırmacı", placeholder="Örn: Ayşe Yılmaz", key="arastirmaci_input").strip()
-    
-    # Öğrenci kodu kayıt sonrası silinmesi için key atandı
     ogrenci_kod = col_o.text_input("Öğrenci Kodu", placeholder="Örn: OKL-001-K", key="ogrenci_kod_input").strip()
 
     col_c, col_s = st.columns(2)
@@ -340,32 +333,40 @@ with col_sol:
     if not arastirmaci or not ogrenci_kod:
         st.info("ℹ️ Lütfen araştırmacı adını ve öğrenci kodunu giriniz.")
     elif kota_durumu in ["uygun", "dolu_ama_acik"]:
-        c1, c2, c3, c4 = st.columns(4)
         
-        # Süre kutuları kayıt sonrası temizlenmesi için özel key'ler ile oluşturuldu
-        sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sekil_input")
-        sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="renk_input")
-        sure_sayi  = c3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
+        # RAN TESTLERİ BÖLÜMÜ
+        st.markdown("<div style='margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>RAN (İSİMLENDİRME) BATARYASI</div>", unsafe_allow_html=True)
+        r1, r2, r3 = st.columns(3)
+        sure_sekil = r1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sekil_input")
+        sure_renk  = r2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="renk_input")
+        sure_sayi  = r3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
 
+        # RAS TESTLERİ VE HARF BÖLÜMÜ
+        st.markdown("<div style='margin-top:12px; margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>RAS (ARDIL İSİMLENDİRME) VE HARF BATARYASI</div>", unsafe_allow_html=True)
+        r4, r5, r6 = st.columns(3)
+        
         if yas_ay and yas_ay >= 83:
-            sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
+            sure_harf = r4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
+            sure_ras2 = r5.number_input("5. 2'li RAS (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras2_input")
+            sure_ras3 = r6.number_input("6. 3'lü RAS (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras3_input")
         else:
-            sure_harf = 0.0
-            c4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
+            sure_harf, sure_ras2, sure_ras3 = 0.0, 0.0, 0.0
+            r4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
+            r5.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
+            r6.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
 
         st.write("")
         kaydet = st.button("⚡ VERİYİ NORM HAVUZUNA İŞLE", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
 
         if kaydet:
             hatali_giris = False
-            if sure_sekil is None or sure_sekil < 10.0:
-                hatali_giris = True
-            if sure_renk is None or sure_renk < 10.0:
-                hatali_giris = True
-            if sure_sayi is None or sure_sayi < 10.0:
-                hatali_giris = True
-            if yas_ay and yas_ay >= 83 and (sure_harf is None or sure_harf < 10.0):
-                hatali_giris = True
+            if sure_sekil is None or sure_sekil < 10.0: hatali_giris = True
+            if sure_renk is None or sure_renk < 10.0: hatali_giris = True
+            if sure_sayi is None or sure_sayi < 10.0: hatali_giris = True
+            if yas_ay and yas_ay >= 83:
+                if sure_harf is None or sure_harf < 10.0: hatali_giris = True
+                if sure_ras2 is None or sure_ras2 < 10.0: hatali_giris = True
+                if sure_ras3 is None or sure_ras3 < 10.0: hatali_giris = True
 
             if hatali_giris:
                 st.error("Lütfen uygulanan tüm testler için en az 10 saniye geçerli bir süre giriniz.")
@@ -378,7 +379,6 @@ with col_sol:
                         sheet = client.open_by_url(sheet_url)
                         worksheet = sheet.worksheet("Sheet1")
 
-                        # Mükerrer Kontrolü
                         mevcut_kodlar = [str(x).strip() for x in worksheet.col_values(3)[1:]]
                         if ogrenci_kod in mevcut_kodlar:
                             st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten mevcut! Mükerrer kayıt engellendi.")
@@ -397,15 +397,16 @@ with col_sol:
                                 sure_sekil,
                                 sure_renk,
                                 sure_sayi,
-                                sure_harf if sure_harf is not None else 0.0
+                                sure_harf if sure_harf is not None else 0.0,
+                                sure_ras2 if sure_ras2 is not None else 0.0,
+                                sure_ras3 if sure_ras3 is not None else 0.0
                             ]
                             worksheet.append_row(yeni_satir)
                             
-                            # KULLANICI ARAYÜZÜ TEMİZLİĞİ VE HIZLANDIRMA
-                            get_data.clear() # Google Sheets önbelleğini temizle ki tablo anında güncellensin
+                            get_data.clear()
                             
-                            # Sadece bu öğrenciye özel girilen kutuların hafızasını sil (Okul, Araştırmacı kalır)
-                            for k in ['ogrenci_kod_input', 'sekil_input', 'renk_input', 'sayi_input', 'harf_input']:
+                            # Eklendi: Yeni kutuların da hafızası temizlenir
+                            for k in ['ogrenci_kod_input', 'sekil_input', 'renk_input', 'sayi_input', 'harf_input', 'ras2_input', 'ras3_input']:
                                 if k in st.session_state:
                                     del st.session_state[k]
                             
@@ -426,7 +427,7 @@ with col_sag:
 
     tum_dilimler = get_tum_dilimler()
     toplam_kayit = len(df_mevcut[df_mevcut["Yas_Dilimi"].notna()]) if not df_mevcut.empty else 0
-    toplam_hedef = len(tum_dilimler) * HEDEF_KISI_SAYISI * 3 # 41 dilim x 15 kişi x 3 SED
+    toplam_hedef = len(tum_dilimler) * HEDEF_KISI_SAYISI * 3 
     kalan_genel = max(0, toplam_hedef - toplam_kayit)
 
     st.markdown(f"""
@@ -492,5 +493,5 @@ with col_sag:
 
     st.write("")
     if st.button("🔄 Radarı Yenile", use_container_width=True):
-        get_data.clear() # Butona basılınca da güncel veriyi zorla çeksin
+        get_data.clear() 
         st.rerun()
