@@ -15,14 +15,12 @@ st.markdown("""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-  /* Zemin ve Tipografi */
   .stApp {
       background-color: #0b1120 !important;
       color: #e2e8f0 !important;
       font-family: 'Plus Jakarta Sans', sans-serif !important;
   }
 
-  /* Girdi Alanları */
   div[data-baseweb="input"] {
       background-color: #131d32 !important;
       border: 1px solid rgba(148, 163, 184, 0.18) !important;
@@ -43,7 +41,6 @@ st.markdown("""
       color: #475569 !important;
   }
 
-  /* Selectbox / Açılır Menüler */
   div[data-baseweb="select"] > div {
       background-color: #131d32 !important;
       border: 1px solid rgba(148, 163, 184, 0.18) !important;
@@ -55,7 +52,6 @@ st.markdown("""
       font-family: 'Plus Jakarta Sans', sans-serif !important;
   }
 
-  /* Kronometre Süre Sayaç Kutuları */
   input[type="number"] {
       font-family: 'Space Grotesk', sans-serif !important;
       font-weight: 600 !important;
@@ -64,7 +60,6 @@ st.markdown("""
       text-align: center !important;
   }
 
-  /* Alan Etiketleri */
   label p {
       font-size: 11.5px !important;
       font-weight: 600 !important;
@@ -72,7 +67,6 @@ st.markdown("""
       color: #94a3b8 !important;
   }
 
-  /* Kaydet Butonu */
   div.stButton > button[kind="primary"] {
       background: linear-gradient(135deg, #0284c7, #2563eb) !important;
       border: 1px solid rgba(56, 189, 248, 0.35) !important;
@@ -90,7 +84,6 @@ st.markdown("""
       transform: translateY(-1px) !important;
   }
 
-  /* Kart ve Başlıklar */
   .section-header {
       background: rgba(19, 29, 50, 0.7);
       border: 1px solid rgba(148, 163, 184, 0.12);
@@ -114,7 +107,6 @@ st.markdown("""
       color: #64748b;
   }
 
-  /* Yaş Göstergesi Kartı */
   .telemetry-age-box {
       background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(19, 29, 50, 0.7));
       border: 1px solid rgba(56, 189, 248, 0.2);
@@ -185,7 +177,6 @@ OKUL_LISTESI = {
     ]
 }
 
-# --- 60 AYDAN BAŞLAYAN 3 AYLIK DİLİMLER ---
 def get_yas_dilimi(ay):
     if ay < 60 or ay > 180:
         return None
@@ -202,10 +193,8 @@ def get_tum_dilimler():
     dilimler.append("180 Ay")
     return dilimler
 
-# Hücre (Ay x SED) başına hedeflenen öğrenci sayısı (Sürekli Normlama İçin)
 HEDEF_KISI_SAYISI = 15
 
-# --- GOOGLE SHEETS BAĞLANTISI ---
 def get_gspread_client():
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -226,6 +215,8 @@ def get_gspread_client():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     return gspread.authorize(creds)
 
+# CACHE EKLENDİ: Sistemin her harf basışta yavaşlamasını engeller
+@st.cache_data(ttl=60)
 def get_data():
     try:
         client = get_gspread_client()
@@ -239,7 +230,6 @@ def get_data():
 
 df_mevcut = get_data()
 
-# DataFrame'e dilim kolonunu ekleyelim
 if not df_mevcut.empty and "Yas_Ayi" in df_mevcut.columns:
     df_mevcut["Yas_Dilimi"] = df_mevcut["Yas_Ayi"].apply(lambda x: get_yas_dilimi(pd.to_numeric(x, errors="coerce")))
 else:
@@ -248,33 +238,29 @@ else:
 if "kaydediliyor" not in st.session_state:
     st.session_state.kaydediliyor = False
 
-# Kayıt sonrası toast bildirimi
+# Bildirim Gösterimi
 if "basari_mesaji" in st.session_state:
     st.toast(st.session_state.basari_mesaji, icon="✅")
     st.success(st.session_state.basari_mesaji)
     del st.session_state.basari_mesaji
 
-# --- ÜST TELEMETRİ BARI ---
 st.markdown("""
 <div style="background: rgba(19, 29, 50, 0.9); border: 1px solid rgba(148, 163, 184, 0.12); padding: 12px 20px; border-radius: 9px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
     <div>
         <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #f8fafc; letter-spacing: 0.3px;">
             RAN Ulusal Norm Çalışması <span style="font-size: 10px; padding: 2px 8px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">SAHA PANELİ</span>
         </h3>
-        <p style="margin: 2px 0 0 0; font-size: 11.5px; color: #94a3b8;">Bilişsel İsimlendirme Hızı ve Örneklem Veri Toplama İstasyonu (Sürekli Normlama Modeli)</p>
+        <p style="margin: 2px 0 0 0; font-size: 11.5px; color: #94a3b8;">Bilişsel İsimlendirme Hızı ve Örneklem Veri Toplama İstasyonu</p>
     </div>
     <div style="display: flex; gap: 10px;">
         <span style="font-family: 'Space Grotesk'; font-size: 11px; padding: 4px 10px; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.25); color: #34d399; border-radius: 6px;">● SİSTEM AKTİF</span>
-        <span style="font-family: 'Space Grotesk'; font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; border-radius: 6px;">PROTOKOL: 60-180 AY (3 AYLIK BLOKLAR)</span>
+        <span style="font-family: 'Space Grotesk'; font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; border-radius: 6px;">PROTOKOL: 60-180 AY</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 col_sol, col_sag = st.columns([1.15, 0.85], gap="large")
 
-# -----------------------------------------
-# SOL PANEL: DENEK VE SÜRE GİRİŞİ
-# -----------------------------------------
 with col_sol:
     st.markdown("""
     <div class="section-header">
@@ -284,8 +270,12 @@ with col_sol:
     """, unsafe_allow_html=True)
 
     col_a, col_o = st.columns(2)
-    arastirmaci = col_a.text_input("Araştırmacı", placeholder="Örn: Ayşe Yılmaz / A-01").strip()
-    ogrenci_kod = col_o.text_input("Öğrenci Kodu", placeholder="Örn: OKL-001-K").strip()
+    
+    # Araştırmacı hücresi silinmemesi için key atandı
+    arastirmaci = col_a.text_input("Araştırmacı", placeholder="Örn: Ayşe Yılmaz", key="arastirmaci_input").strip()
+    
+    # Öğrenci kodu kayıt sonrası silinmesi için key atandı
+    ogrenci_kod = col_o.text_input("Öğrenci Kodu", placeholder="Örn: OKL-001-K", key="ogrenci_kod_input").strip()
 
     col_c, col_s = st.columns(2)
     cinsiyet = col_c.selectbox("Cinsiyet", ["Kız", "Erkek"])
@@ -320,7 +310,6 @@ with col_sol:
 
             kalan_ihtiyac = max(0, HEDEF_KISI_SAYISI - mevcut_ogrenci)
 
-            # KOTA DOLSA BİLE KİLİTLEME YOK (Sürekli Normlama Esnekliği)
             if mevcut_ogrenci >= HEDEF_KISI_SAYISI:
                 rozet_html = f'<span style="color:#f87171; font-family:\'Space Grotesk\'; font-weight:700;">🔴 DOLDU ({mevcut_ogrenci}/{HEDEF_KISI_SAYISI}) — GİRİŞ AÇIK</span>'
                 kota_durumu = "dolu_ama_acik"
@@ -352,12 +341,14 @@ with col_sol:
         st.info("ℹ️ Lütfen araştırmacı adını ve öğrenci kodunu giriniz.")
     elif kota_durumu in ["uygun", "dolu_ama_acik"]:
         c1, c2, c3, c4 = st.columns(4)
-        sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
-        sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
-        sure_sayi  = c3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
+        
+        # Süre kutuları kayıt sonrası temizlenmesi için özel key'ler ile oluşturuldu
+        sure_sekil = c1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sekil_input")
+        sure_renk  = c2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="renk_input")
+        sure_sayi  = c3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
 
         if yas_ay and yas_ay >= 83:
-            sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0")
+            sure_harf = c4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
         else:
             sure_harf = 0.0
             c4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
@@ -387,7 +378,7 @@ with col_sol:
                         sheet = client.open_by_url(sheet_url)
                         worksheet = sheet.worksheet("Sheet1")
 
-                        # Mükerrer Öğrenci Kodu Kontrolü
+                        # Mükerrer Kontrolü
                         mevcut_kodlar = [str(x).strip() for x in worksheet.col_values(3)[1:]]
                         if ogrenci_kod in mevcut_kodlar:
                             st.error(f"⚠️ DİKKAT: '{ogrenci_kod}' kodlu öğrenci sistemde zaten mevcut! Mükerrer kayıt engellendi.")
@@ -409,6 +400,15 @@ with col_sol:
                                 sure_harf if sure_harf is not None else 0.0
                             ]
                             worksheet.append_row(yeni_satir)
+                            
+                            # KULLANICI ARAYÜZÜ TEMİZLİĞİ VE HIZLANDIRMA
+                            get_data.clear() # Google Sheets önbelleğini temizle ki tablo anında güncellensin
+                            
+                            # Sadece bu öğrenciye özel girilen kutuların hafızasını sil (Okul, Araştırmacı kalır)
+                            for k in ['ogrenci_kod_input', 'sekil_input', 'renk_input', 'sayi_input', 'harf_input']:
+                                if k in st.session_state:
+                                    del st.session_state[k]
+                            
                             st.session_state.basari_mesaji = f"İşlem Tamamlandı: {ogrenci_kod} başarıyla norm havuzuna işlendi!"
                             st.session_state.kaydediliyor = False
                             st.rerun()
@@ -416,9 +416,6 @@ with col_sol:
                         st.session_state.kaydediliyor = False
                         st.error(f"Hata oluştu: {str(e)}")
 
-# -----------------------------------------
-# SAĞ PANEL: 3 AYLIK KOTA RADARI (60-180 AY)
-# -----------------------------------------
 with col_sag:
     st.markdown("""
     <div class="section-header">
@@ -429,7 +426,7 @@ with col_sag:
 
     tum_dilimler = get_tum_dilimler()
     toplam_kayit = len(df_mevcut[df_mevcut["Yas_Dilimi"].notna()]) if not df_mevcut.empty else 0
-    toplam_hedef = len(tum_dilimler) * HEDEF_KISI_SAYISI * 3 # 41 dilim x 15 kişi x 3 SED = 1845 öğrenci
+    toplam_hedef = len(tum_dilimler) * HEDEF_KISI_SAYISI * 3 # 41 dilim x 15 kişi x 3 SED
     kalan_genel = max(0, toplam_hedef - toplam_kayit)
 
     st.markdown(f"""
@@ -495,4 +492,5 @@ with col_sag:
 
     st.write("")
     if st.button("🔄 Radarı Yenile", use_container_width=True):
+        get_data.clear() # Butona basılınca da güncel veriyi zorla çeksin
         st.rerun()
