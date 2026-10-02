@@ -290,12 +290,12 @@ with col_sol:
     yas_dilimi = None
     kota_durumu = "bekliyor"
 
-    # --- YENİ ALFANÜMERİK KİLİT MANTIĞI ---
+    # --- ALFANÜMERİK KİLİT MANTIĞI ---
     alfanumerik_acik = True
     if sinif == "Okul Öncesi":
         alfanumerik_acik = False
     elif sinif == "1. Sınıf":
-        # 9, 10, 11, 12, 1 ayları (Eylül - Ocak arası Güz Dönemi) kapalı
+        # Eylül - Ocak arası Güz Dönemi kapalı
         if test_tarihi.month in [9, 10, 11, 12, 1]:
             alfanumerik_acik = False
 
@@ -349,28 +349,28 @@ with col_sol:
         st.info("ℹ️ Lütfen araştırmacı adını ve öğrenci kodunu giriniz.")
     elif kota_durumu in ["uygun", "dolu_ama_acik"]:
         
-        # RAN TESTLERİ BÖLÜMÜ
-        st.markdown("<div style='margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>RAN (İSİMLENDİRME) BATARYASI</div>", unsafe_allow_html=True)
+        # SATIR 1: ŞEKİL - RENK - HARF
+        st.markdown("<div style='margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>1. BÖLÜM (ŞEKİL - RENK - HARF)</div>", unsafe_allow_html=True)
         r1, r2, r3 = st.columns(3)
         sure_sekil = r1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sekil_input")
         sure_renk  = r2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="renk_input")
         
         if alfanumerik_acik:
-            sure_sayi  = r3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
+            sure_harf  = r3.number_input("3. Harf",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
         else:
-            sure_sayi = 0.0
+            sure_harf = 0.0
             r3.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
 
-        # RAS TESTLERİ VE HARF BÖLÜMÜ
-        st.markdown("<div style='margin-top:12px; margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>RAS (ARDIL İSİMLENDİRME) VE HARF BATARYASI</div>", unsafe_allow_html=True)
+        # SATIR 2: RAKAM - 2'Lİ RAS - 3'LÜ RAS
+        st.markdown("<div style='margin-top:12px; margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>2. BÖLÜM (RAKAM - 2'Lİ RAS - 3'LÜ RAS)</div>", unsafe_allow_html=True)
         r4, r5, r6 = st.columns(3)
         
         if alfanumerik_acik:
-            sure_harf = r4.number_input("4. Harf", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
+            sure_sayi = r4.number_input("4. Rakam", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
             sure_ras2 = r5.number_input("5. 2'li RAS", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras2_input")
             sure_ras3 = r6.number_input("6. 3'lü RAS", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras3_input")
         else:
-            sure_harf, sure_ras2, sure_ras3 = 0.0, 0.0, 0.0
+            sure_sayi, sure_ras2, sure_ras3 = 0.0, 0.0, 0.0
             r4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
             r5.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
             r6.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
@@ -383,8 +383,8 @@ with col_sol:
             if sure_sekil is None or sure_sekil < 10.0: hatali_giris = True
             if sure_renk is None or sure_renk < 10.0: hatali_giris = True
             if alfanumerik_acik:
-                if sure_sayi is None or sure_sayi < 10.0: hatali_giris = True
                 if sure_harf is None or sure_harf < 10.0: hatali_giris = True
+                if sure_sayi is None or sure_sayi < 10.0: hatali_giris = True
                 if sure_ras2 is None or sure_ras2 < 10.0: hatali_giris = True
                 if sure_ras3 is None or sure_ras3 < 10.0: hatali_giris = True
 
@@ -409,7 +409,7 @@ with col_sol:
                                 arastirmaci,
                                 ogrenci_kod,
                                 cinsiyet,
-                                sinif, # Yeni Sinif verisi eklendi
+                                sinif, 
                                 sed,
                                 secilen_okul,
                                 dogum_tarihi.strftime("%Y-%m-%d"),
