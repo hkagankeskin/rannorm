@@ -176,6 +176,11 @@ OKUL_LISTESI = {
     ]
 }
 
+SINIF_SEVIYELERI = [
+    "Okul Öncesi", "1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", 
+    "5. Sınıf", "6. Sınıf", "7. Sınıf", "8. Sınıf", "Lise"
+]
+
 def get_yas_dilimi(ay):
     if ay < 60 or ay > 180:
         return None
@@ -270,8 +275,9 @@ with col_sol:
     arastirmaci = col_a.text_input("Araştırmacı", placeholder="Örn: Ayşe Yılmaz", key="arastirmaci_input").strip()
     ogrenci_kod = col_o.text_input("Öğrenci Kodu", placeholder="Örn: OKL-001-K", key="ogrenci_kod_input").strip()
 
-    col_c, col_s = st.columns(2)
+    col_c, col_snf, col_s = st.columns(3)
     cinsiyet = col_c.selectbox("Cinsiyet", ["Kız", "Erkek"])
+    sinif = col_snf.selectbox("Sınıf", SINIF_SEVIYELERI)
     sed = col_s.selectbox("Okul SED Türü", ["Alt", "Orta", "Üst"])
 
     secilen_okul = st.selectbox("Uygulama Yapılan Okul", OKUL_LISTESI.get(sed, ["Okul Bulunamadı"]))
@@ -283,6 +289,15 @@ with col_sol:
     yas_ay = None
     yas_dilimi = None
     kota_durumu = "bekliyor"
+
+    # --- YENİ ALFANÜMERİK KİLİT MANTIĞI ---
+    alfanumerik_acik = True
+    if sinif == "Okul Öncesi":
+        alfanumerik_acik = False
+    elif sinif == "1. Sınıf":
+        # 9, 10, 11, 12, 1 ayları (Eylül - Ocak arası Güz Dönemi) kapalı
+        if test_tarihi.month in [9, 10, 11, 12, 1]:
+            alfanumerik_acik = False
 
     if dogum_tarihi and test_tarihi:
         yil_farki = test_tarihi.year - dogum_tarihi.year
@@ -339,21 +354,26 @@ with col_sol:
         r1, r2, r3 = st.columns(3)
         sure_sekil = r1.number_input("1. Şekil", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sekil_input")
         sure_renk  = r2.number_input("2. Renk",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="renk_input")
-        sure_sayi  = r3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
+        
+        if alfanumerik_acik:
+            sure_sayi  = r3.number_input("3. Sayı",  min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="sayi_input")
+        else:
+            sure_sayi = 0.0
+            r3.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
 
         # RAS TESTLERİ VE HARF BÖLÜMÜ
         st.markdown("<div style='margin-top:12px; margin-bottom:8px; font-size:11px; font-weight:600; color:#94a3b8; letter-spacing:0.5px;'>RAS (ARDIL İSİMLENDİRME) VE HARF BATARYASI</div>", unsafe_allow_html=True)
         r4, r5, r6 = st.columns(3)
         
-        if yas_ay and yas_ay >= 83:
-            sure_harf = r4.number_input("4. Harf (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
-            sure_ras2 = r5.number_input("5. 2'li RAS (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras2_input")
-            sure_ras3 = r6.number_input("6. 3'lü RAS (83+)", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras3_input")
+        if alfanumerik_acik:
+            sure_harf = r4.number_input("4. Harf", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="harf_input")
+            sure_ras2 = r5.number_input("5. 2'li RAS", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras2_input")
+            sure_ras3 = r6.number_input("6. 3'lü RAS", min_value=0.0, max_value=200.0, step=0.5, value=None, placeholder="0.0", key="ras3_input")
         else:
             sure_harf, sure_ras2, sure_ras3 = 0.0, 0.0, 0.0
-            r4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
-            r5.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
-            r6.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(83+ AY)</div>', unsafe_allow_html=True)
+            r4.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
+            r5.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
+            r6.markdown('<div style="text-align:center; padding-top:28px; font-size:11px; color:#64748b; font-family:\'Space Grotesk\';">KİLİTLİ<br>(Müfredat Kuralı)</div>', unsafe_allow_html=True)
 
         st.write("")
         kaydet = st.button("⚡ VERİYİ NORM HAVUZUNA İŞLE", use_container_width=True, type="primary", disabled=st.session_state.kaydediliyor)
@@ -362,8 +382,8 @@ with col_sol:
             hatali_giris = False
             if sure_sekil is None or sure_sekil < 10.0: hatali_giris = True
             if sure_renk is None or sure_renk < 10.0: hatali_giris = True
-            if sure_sayi is None or sure_sayi < 10.0: hatali_giris = True
-            if yas_ay and yas_ay >= 83:
+            if alfanumerik_acik:
+                if sure_sayi is None or sure_sayi < 10.0: hatali_giris = True
                 if sure_harf is None or sure_harf < 10.0: hatali_giris = True
                 if sure_ras2 is None or sure_ras2 < 10.0: hatali_giris = True
                 if sure_ras3 is None or sure_ras3 < 10.0: hatali_giris = True
@@ -389,6 +409,7 @@ with col_sol:
                                 arastirmaci,
                                 ogrenci_kod,
                                 cinsiyet,
+                                sinif, # Yeni Sinif verisi eklendi
                                 sed,
                                 secilen_okul,
                                 dogum_tarihi.strftime("%Y-%m-%d"),
@@ -396,7 +417,7 @@ with col_sol:
                                 yas_ay,
                                 sure_sekil,
                                 sure_renk,
-                                sure_sayi,
+                                sure_sayi if sure_sayi is not None else 0.0,
                                 sure_harf if sure_harf is not None else 0.0,
                                 sure_ras2 if sure_ras2 is not None else 0.0,
                                 sure_ras3 if sure_ras3 is not None else 0.0
@@ -405,7 +426,6 @@ with col_sol:
                             
                             get_data.clear()
                             
-                            # Eklendi: Yeni kutuların da hafızası temizlenir
                             for k in ['ogrenci_kod_input', 'sekil_input', 'renk_input', 'sayi_input', 'harf_input', 'ras2_input', 'ras3_input']:
                                 if k in st.session_state:
                                     del st.session_state[k]
