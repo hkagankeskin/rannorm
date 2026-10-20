@@ -129,7 +129,6 @@ if check_password():
     @st.cache_data
     def load_data():
         norms = {}
-        # Sadece 6 ana test dosyası aranıyor!
         tum_testler = ["Sekil", "Renk", "Rakam", "Harf", "RAS2", "RAS3"]
         for test in tum_testler:
             dosya = f"RAN_{test}_Norm.csv"
@@ -140,10 +139,11 @@ if check_password():
     norms = load_data()
 
     if not norms:
-        st.error("Sistem Hatası: 'RAN_Sekil_Norm.csv' gibi ana norm dosyaları bulunamadı. Lütfen eski sınıflı dosyaları silip 6 ana dosyayı GitHub deponuza yükleyin.")
+        st.error("Sistem Hatası: 'RAN_Sekil_Norm.csv' gibi ana norm dosyaları bulunamadı. Lütfen eski dosyaları silip 6 ana dosyayı GitHub deponuza yükleyin.")
     else:
         st.sidebar.subheader("⚙️ Parametreler")
-        # YAŞ ÇUBUĞU 168 AYA KADAR KISALTILDI
+        
+        # SADECE YAŞ ÇUBUĞU VAR - SINIF SEÇİMİ TAMAMEN KALDIRILDI!
         yas_ay = st.sidebar.slider("Öğrenci Yaşı (Ay)", 60, 168, 84)
         st.sidebar.success(f"✓ Sistem {yas_ay} aylık veriye kilitlendi.")
 
@@ -153,17 +153,11 @@ if check_password():
 
         sure_sekil = st.sidebar.number_input("Şekil", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_renk  = st.sidebar.number_input("Renk",  min_value=0.0, max_value=300.0, value=0.0, step=0.5)
-        
-        # Sınıf yerine küçük yaş grupları için uyarı
-        if yas_ay < 84:
-            st.sidebar.caption("⚠️ Erken yaş grubu: Alfanümerik testler isteğe bağlıdır.")
-        
-        sure_sayi = st.sidebar.number_input("Rakam", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
-        sure_harf = st.sidebar.number_input("Harf",  min_value=0.0, max_value=300.0, value=0.0, step=0.5)
-        sure_ras2 = st.sidebar.number_input("2'li RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
-        sure_ras3 = st.sidebar.number_input("3'lü RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
+        sure_sayi  = st.sidebar.number_input("Rakam", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
+        sure_harf  = st.sidebar.number_input("Harf",  min_value=0.0, max_value=300.0, value=0.0, step=0.5)
+        sure_ras2  = st.sidebar.number_input("2'li RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
+        sure_ras3  = st.sidebar.number_input("3'lü RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
 
-        # Doğrudan test ismiyle ana CSV'ye bağlanıyor
         sureler = {
             "Sekil": sure_sekil,
             "Renk":  sure_renk,
