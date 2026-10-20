@@ -27,6 +27,18 @@ def check_password():
                 st.error("❌ Hatalı şifre.")
     return False
 
+def arka_plan_dosya_bulucu(yas):
+    # Matematiksel okuma için yaşın bulunduğu CSV grubunu tespit eder (Sınıf etiketinden bağımsız)
+    if 60 <= yas <= 83: return 1
+    elif 84 <= yas <= 95: return 2
+    elif 96 <= yas <= 107: return 3
+    elif 108 <= yas <= 119: return 4
+    elif 120 <= yas <= 131: return 5
+    elif 132 <= yas <= 143: return 6
+    elif 144 <= yas <= 155: return 7
+    elif 156 <= yas <= 180: return 8
+    else: return 1 
+
 def bant_goster(t_puani):
     if t_puani <= 30:
         bant = "Çok Zayıf"; renk = "#ef4444"; dolu = 1
@@ -93,7 +105,7 @@ def sonuc_hesapla(df, yas_ay, ham_sure):
     return {"t": satir['norm'], "p": satir['percentile']}
 
 def egitsel_yorum_uret(sonuclar, yas_ay, aktif_testler, sinif_metni):
-    satirlar = [f"Öğrenci, {yas_ay} aylık ({sinif_metni}) norm grubu baz alınarak değerlendirilmiştir."]
+    satirlar = [f"Öğrenci, **{yas_ay} aylık** gelişim norm grubu baz alınarak (**{sinif_metni}** öğrencisi olarak) değerlendirilmiştir."]
     satirlar.append("**Test Bazında Değerlendirme:**")
     for test in aktif_testler:
         s = sonuclar.get(test)
@@ -113,8 +125,8 @@ def egitsel_yorum_uret(sonuclar, yas_ay, aktif_testler, sinif_metni):
 
     satirlar.append("")
     satirlar.append("**Genel Özet:**")
-    if iyi: satirlar.append(f"**Güçlü alanlar:** {', '.join(iyi)} testlerinde akranlarının üzerinde performans sergilemiştir.")
-    if zayif: satirlar.append(f"**Dikkat gerektiren alanlar:** {', '.join(zayif)} testlerinde yavaşlık tespit edilmiştir. RAN hızındaki bu zayıflık okuma güçlüğüne (Disleksi riskine) işaret edebilir; pedagojik müdahale önerilir.")
+    if iyi: satirlar.append(f"**Güçlü alanlar:** {', '.join(iyi)} testlerinde yaşitlarının üzerinde performans sergilemiştir.")
+    if zayif: satirlar.append(f"**Dikkat gerektiren alanlar:** {', '.join(zayif)} testlerinde yavaşlık tespit edilmiştir. RAN hızındaki bu zayıflık okuma güçlüğüne işaret edebilir; pedagojik müdahale önerilir.")
     if not zayif: satirlar.append("Genel değerlendirmede RAN performansı yaş düzeyiyle uyumlu veya üzerindedir. Özel bir müdahale gereksinimi görülmemiştir.")
 
     return "\n\n".join(satirlar)
@@ -140,14 +152,12 @@ if check_password():
         """, unsafe_allow_html=True)
     st.write("Hızlı Otomatik İsimlendirme (RAN) Eğitsel Karar Destek Aracı")
 
-    # DİNAMİK DOSYA OKUMA (1'den 8'e kadar tüm sınıflar)
     @st.cache_data
     def load_data():
         norms = {}
         tum_testler = ["Sekil", "Renk", "Rakam", "Harf", "RAS2", "RAS3"]
         tum_siniflar = range(1, 9)
         
-        # GitHub'daki ana dizinde arar
         for sinif in tum_siniflar:
             for test in tum_testler:
                 dosya = f"RAN_{test}_Sinif{sinif}_Norm.csv"
@@ -161,8 +171,13 @@ if check_password():
         st.error("Sistem Hatası: Hiçbir norm dosyası (.csv) bulunamadı. Lütfen GitHub deponuza dosyaları yükleyin.")
     else:
         st.sidebar.subheader("⚙️ Parametreler")
+        
+        # SINIF VE YAŞ SEÇİMİ TEKRAR BAĞIMSIZ HALE GETİRİLDİ
         secilen_sinif = st.sidebar.selectbox("Öğrenci Sınıfı", range(1, 9), format_func=lambda x: f"{x}. Sınıf")
         yas_ay = st.sidebar.slider("Öğrenci Yaşı (Ay)", 60, 180, 84)
+        
+        # Arka planda okunacak dosyayı yaş belirler (Sınıfın ne seçildiğinden bağımsız)
+        dosya_index = arka_plan_dosya_bulucu(yas_ay)
 
         st.sidebar.divider()
         st.sidebar.subheader("⏱️ Test Süreleri (Saniye)")
@@ -171,28 +186,29 @@ if check_password():
         sure_sekil = st.sidebar.number_input("Şekil", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_renk  = st.sidebar.number_input("Renk",  min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         
-        # 1. Sınıflar için kilit kontrolü, diğerleri için açık
+        # Pedagojik olarak öğretmenin seçtiği "Sınıf" dikkate alınır
         if secilen_sinif == 1:
-            st.sidebar.caption("⚠️ 1. Sınıf müfredatı: Alfanümerik testler isteğe bağlıdır.")
+            st.sidebar.caption("⚠️ 1. Sınıf öğrencisi: Alfanümerik testler isteğe bağlıdır.")
         
         sure_sayi = st.sidebar.number_input("Rakam", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_harf = st.sidebar.number_input("Harf", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_ras2 = st.sidebar.number_input("2'li RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_ras3 = st.sidebar.number_input("3'lü RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
 
+        # Normlar yaşın işaret ettiği dosyadan (dosya_index) çekilir
         sureler = {
-            "Şekil": (sure_sekil, f"Sekil_{secilen_sinif}"),
-            "Renk":  (sure_renk,  f"Renk_{secilen_sinif}"),
-            "Rakam": (sure_sayi,  f"Rakam_{secilen_sinif}"),
-            "Harf":  (sure_harf,  f"Harf_{secilen_sinif}"),
-            "2'li RAS": (sure_ras2, f"RAS2_{secilen_sinif}"),
-            "3'lü RAS": (sure_ras3, f"RAS3_{secilen_sinif}"),
+            "Şekil": (sure_sekil, f"Sekil_{dosya_index}"),
+            "Renk":  (sure_renk,  f"Renk_{dosya_index}"),
+            "Rakam": (sure_sayi,  f"Rakam_{dosya_index}"),
+            "Harf":  (sure_harf,  f"Harf_{dosya_index}"),
+            "2'li RAS": (sure_ras2, f"RAS2_{dosya_index}"),
+            "3'lü RAS": (sure_ras3, f"RAS3_{dosya_index}"),
         }
 
         aktif = {t: (s, k) for t, (s, k) in sureler.items() if s > 0}
 
         if not aktif:
-            st.info("👈 Sol panelden öğrenci yaşını ve test sürelerini girerek analizi başlatın.")
+            st.info("👈 Sol panelden öğrenci sınıfı, yaşını ve test sürelerini girerek analizi başlatın.")
         else:
             sonuclar = {}
             for test, (sure, norm_key) in aktif.items():
@@ -200,32 +216,33 @@ if check_password():
                     s = sonuc_hesapla(norms[norm_key], yas_ay, sure)
                     if s: sonuclar[test] = s
                 else:
-                    st.warning(f"⚠️ {secilen_sinif}. sınıf {test} testi için CSV dosyası sistemde bulunamadı.")
+                    st.warning(f"⚠️ {yas_ay} ay için ({test}) CSV dosyası sistemde bulunamadı.")
 
             if sonuclar:
                 st.divider()
                 st.subheader("📊 Klinik Profil: Test Karşılaştırması")
-
-                cols = st.columns(len(sonuclar))
-                for col, test in zip(cols, sonuclar):
-                    col.markdown(f"### {test}")
-
-                cols = st.columns(len(sonuclar))
-                for col, test in zip(cols, sonuclar):
-                    col.metric("T-Skoru", f"{sonuclar[test]['t']:.1f}")
-
-                cols = st.columns(len(sonuclar))
-                for col, test in zip(cols, sonuclar):
-                    col.metric("Persentil", f"%{sonuclar[test]['p']:.1f}")
-
-                cols = st.columns(len(sonuclar))
-                for col, test in zip(cols, sonuclar):
-                    with col:
-                        st.markdown(bant_goster(sonuclar[test]['t']), unsafe_allow_html=True)
-                        st.image(t_skoru_grafigi(sonuclar[test]['t'], sonuclar[test]['p'], test), use_container_width=True)
+                
+                # 3'LÜ SATIRLAR HALİNDE GÖSTERME DÜZENİ
+                test_listesi = list(sonuclar.keys())
+                
+                for i in range(0, len(test_listesi), 3):
+                    chunk = test_listesi[i:i+3]
+                    cols = st.columns(3)
+                    
+                    for idx, test in enumerate(chunk):
+                        with cols[idx]:
+                            st.markdown(f"### {test}")
+                            metrik_col1, metrik_col2 = st.columns(2)
+                            metrik_col1.metric("T-Skoru", f"{sonuclar[test]['t']:.1f}")
+                            metrik_col2.metric("Persentil", f"%{sonuclar[test]['p']:.1f}")
+                            
+                            st.markdown(bant_goster(sonuclar[test]['t']), unsafe_allow_html=True)
+                            st.image(t_skoru_grafigi(sonuclar[test]['t'], sonuclar[test]['p'], test), use_container_width=True)
+                    st.write("") 
 
                 st.divider()
                 st.subheader("📝 Öğretmen/Uzman İçin Eğitsel Değerlendirme")
+                # Rapor kısmına öğretmenin seçtiği sınıf gönderiliyor
                 yorum = egitsel_yorum_uret(sonuclar, yas_ay, list(sonuclar.keys()), f"{secilen_sinif}. Sınıf")
                 st.info(yorum)
 
