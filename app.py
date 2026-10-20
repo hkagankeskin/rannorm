@@ -27,8 +27,7 @@ def check_password():
                 st.error("❌ Hatalı şifre.")
     return False
 
-def arka_plan_dosya_bulucu(yas):
-    # Matematiksel okuma için yaşın bulunduğu CSV grubunu tespit eder (Sınıf etiketinden bağımsız)
+def yas_aydan_dosya_bul(yas):
     if 60 <= yas <= 83: return 1
     elif 84 <= yas <= 95: return 2
     elif 96 <= yas <= 107: return 3
@@ -104,8 +103,8 @@ def sonuc_hesapla(df, yas_ay, ham_sure):
     satir = df_yas.loc[idx]
     return {"t": satir['norm'], "p": satir['percentile']}
 
-def egitsel_yorum_uret(sonuclar, yas_ay, aktif_testler, sinif_metni):
-    satirlar = [f"Öğrenci, **{yas_ay} aylık** gelişim norm grubu baz alınarak (**{sinif_metni}** öğrencisi olarak) değerlendirilmiştir."]
+def egitsel_yorum_uret(sonuclar, yas_ay, aktif_testler):
+    satirlar = [f"Öğrenci, **{yas_ay} aylık** gelişim norm grubu baz alınarak değerlendirilmiştir."]
     satirlar.append("**Test Bazında Değerlendirme:**")
     for test in aktif_testler:
         s = sonuclar.get(test)
@@ -125,7 +124,7 @@ def egitsel_yorum_uret(sonuclar, yas_ay, aktif_testler, sinif_metni):
 
     satirlar.append("")
     satirlar.append("**Genel Özet:**")
-    if iyi: satirlar.append(f"**Güçlü alanlar:** {', '.join(iyi)} testlerinde yaşitlarının üzerinde performans sergilemiştir.")
+    if iyi: satirlar.append(f"**Güçlü alanlar:** {', '.join(iyi)} testlerinde yaşıtlarının üzerinde performans sergilemiştir.")
     if zayif: satirlar.append(f"**Dikkat gerektiren alanlar:** {', '.join(zayif)} testlerinde yavaşlık tespit edilmiştir. RAN hızındaki bu zayıflık okuma güçlüğüne işaret edebilir; pedagojik müdahale önerilir.")
     if not zayif: satirlar.append("Genel değerlendirmede RAN performansı yaş düzeyiyle uyumlu veya üzerindedir. Özel bir müdahale gereksinimi görülmemiştir.")
 
@@ -172,12 +171,11 @@ if check_password():
     else:
         st.sidebar.subheader("⚙️ Parametreler")
         
-        # SINIF VE YAŞ SEÇİMİ TEKRAR BAĞIMSIZ HALE GETİRİLDİ
-        secilen_sinif = st.sidebar.selectbox("Öğrenci Sınıfı", range(1, 9), format_func=lambda x: f"{x}. Sınıf")
+        # SADECE YAŞ SEÇİMİ (Sınıf seçimi tamamen kaldırıldı)
         yas_ay = st.sidebar.slider("Öğrenci Yaşı (Ay)", 60, 180, 84)
+        dosya_index = yas_aydan_dosya_bul(yas_ay)
         
-        # Arka planda okunacak dosyayı yaş belirler (Sınıfın ne seçildiğinden bağımsız)
-        dosya_index = arka_plan_dosya_bulucu(yas_ay)
+        st.sidebar.success(f"✓ {yas_ay} Aylık Norm Grubu Aktif")
 
         st.sidebar.divider()
         st.sidebar.subheader("⏱️ Test Süreleri (Saniye)")
@@ -186,16 +184,14 @@ if check_password():
         sure_sekil = st.sidebar.number_input("Şekil", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_renk  = st.sidebar.number_input("Renk",  min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         
-        # Pedagojik olarak öğretmenin seçtiği "Sınıf" dikkate alınır
-        if secilen_sinif == 1:
-            st.sidebar.caption("⚠️ 1. Sınıf öğrencisi: Alfanümerik testler isteğe bağlıdır.")
+        if dosya_index == 1:
+            st.sidebar.caption("⚠️ Küçük yaş grubu: Alfanümerik testler isteğe bağlıdır.")
         
         sure_sayi = st.sidebar.number_input("Rakam", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_harf = st.sidebar.number_input("Harf", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_ras2 = st.sidebar.number_input("2'li RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
         sure_ras3 = st.sidebar.number_input("3'lü RAS", min_value=0.0, max_value=300.0, value=0.0, step=0.5)
 
-        # Normlar yaşın işaret ettiği dosyadan (dosya_index) çekilir
         sureler = {
             "Şekil": (sure_sekil, f"Sekil_{dosya_index}"),
             "Renk":  (sure_renk,  f"Renk_{dosya_index}"),
@@ -208,7 +204,7 @@ if check_password():
         aktif = {t: (s, k) for t, (s, k) in sureler.items() if s > 0}
 
         if not aktif:
-            st.info("👈 Sol panelden öğrenci sınıfı, yaşını ve test sürelerini girerek analizi başlatın.")
+            st.info("👈 Sol panelden öğrenci yaşını ve test sürelerini girerek analizi başlatın.")
         else:
             sonuclar = {}
             for test, (sure, norm_key) in aktif.items():
@@ -222,7 +218,7 @@ if check_password():
                 st.divider()
                 st.subheader("📊 Klinik Profil: Test Karşılaştırması")
                 
-                # 3'LÜ SATIRLAR HALİNDE GÖSTERME DÜZENİ
+                # 3'LÜ SATIRLAR HALİNDE GÖSTERME DÜZENİ (Değişmedi)
                 test_listesi = list(sonuclar.keys())
                 
                 for i in range(0, len(test_listesi), 3):
@@ -242,8 +238,7 @@ if check_password():
 
                 st.divider()
                 st.subheader("📝 Öğretmen/Uzman İçin Eğitsel Değerlendirme")
-                # Rapor kısmına öğretmenin seçtiği sınıf gönderiliyor
-                yorum = egitsel_yorum_uret(sonuclar, yas_ay, list(sonuclar.keys()), f"{secilen_sinif}. Sınıf")
+                yorum = egitsel_yorum_uret(sonuclar, yas_ay, list(sonuclar.keys()))
                 st.info(yorum)
 
     st.write("")
